@@ -121,6 +121,10 @@ public class fParser {
 		return isLaOpChar(la, T_ID, OpChar.ASSIGN);
 	}
 
+	private boolean isPipeOpT(int la) {
+		return isLaOpChar(la, T_ID, OpChar.PIPE);
+	}
+
 	fOperatorKind getOperatorKind(fToken token) {
 		return fOperatorMap.getOperatorKind(token);
 	}
@@ -288,6 +292,15 @@ public class fParser {
 		}
 	}
 
+	private ProdRootLeafN patterns(ProdRootLeafN rootLeaf) {
+		rootLeaf = pattern1(rootLeaf, fTreeNKind.N_ID_LEAF, null);
+		while (isPipeOpT(0)) {
+			next();
+			rootLeaf = pattern1(rootLeaf, fTreeNKind.N_ID_OPERATOR, prevToken);
+		}
+		return rootLeaf;
+	}
+
 	private ProdRootLeafN exprs(ProdRootLeafN rootLeaf) {
 		rootLeaf = expression(rootLeaf, fTreeNKind.N_ID_LEAF, null);
 		while (token.kind == T_COMMA) {
@@ -440,6 +453,34 @@ public class fParser {
 		}
 	}
 
+	private void expressionNew(ProdArgs a) {
+
+	}
+
+
+	private void expressionLCurl(ProdArgs a) {
+		switch (a.prevNKind) {
+			// func { BlockExpr }
+			case N_ID_LEAF: {
+				next();
+				switch (token.kind) {
+					case T_CASE: {
+						ProdRootLeafN caseClasses = caseClasses();
+						break;
+					}
+					default: {
+//						blockProdLoop(a);
+						ProdRootLeafN block = block();
+						return;
+					}
+				}
+			}
+			default:
+				throw new RuntimeException("Unexpected token: " + token.kind);
+		}
+	}
+
+
 	private ProdRootLeafN expression() {
 		return expression(null, null, null);
 	}
@@ -448,12 +489,67 @@ public class fParser {
 		return type(null, null, null);
 	}
 
+	private ProdRootLeafN caseClasses() {
+		return caseClasses(null, null, null);
+	}
+
+	private ProdRootLeafN block() {
+		return block(null, null, null);
+	}
+
 	private ProdRootLeafN type(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
 		return commonProd(ProdRootOp.TYPE_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
 	private ProdRootLeafN expression(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
 		return commonProd(ProdRootOp.EXPR_PRD, wrapSubExpr, prevNKind, opToken);
+	}
+
+	private ProdRootLeafN caseClasses(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+		return commonProd(ProdRootOp.CASE_CLASSES_PRD, wrapSubExpr, prevNKind, opToken);
+	}
+
+	private ProdRootLeafN block(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+		return commonProd(ProdRootOp.BLOCK_PRD, wrapSubExpr, prevNKind, opToken);
+	}
+
+	private ProdRootLeafN pattern1(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+		return commonProd(ProdRootOp.PATTERN1_PRD, wrapSubExpr, prevNKind, opToken);
+	}
+
+	void blockExprProdLoop(ProdArgs a){
+		loop:
+		while (true) {
+			a.isContinue = false;
+			switch (token.kind) {
+				case T_CASE: {
+					//caseClasses
+					continue;
+				}
+				case T_IMPORT: {
+					//imports
+					continue;
+				}
+
+				case T_RCURL:
+					break loop;
+
+				default:
+					break loop;
+			}
+		}
+	}
+
+	void pattern1ProdLoop(ProdArgs a) {
+		loop:
+		while (true) {
+			a.isContinue = false;
+			switch (token.kind) {
+
+				default:
+					break loop;
+			}
+		}
 	}
 
 	void typeProdLoop(ProdArgs a) {
@@ -468,7 +564,7 @@ public class fParser {
 				}
 				case T_FAT_ARROW: {
 					typeFatArrow(a);
-					continue;
+					break loop;
 				}
 				case T_LPAREN: {
 					typeLParen(a);
@@ -483,6 +579,27 @@ public class fParser {
 				case T_RBRACKET:
 				case T_RPAREN:
 				case T_COMMA:
+				default:
+					break loop;
+			}
+		}
+	}
+
+	void casePatterns(ProdArgs a){
+		switch (getPrevNKind(a,)){
+
+		}
+	}
+	void caseClassesProdLoop(ProdArgs a) {
+		loop:
+		while (true) {
+			a.isContinue = false;
+			switch (token.kind) {
+				case T_CASE: {
+					casePatterns(a);
+					continue;
+				}
+				case T_RCURL:
 				default:
 					break loop;
 			}
@@ -522,6 +639,16 @@ public class fParser {
 					break loop;
 				}
 
+				case T_NEW: {
+					expressionNew(a);
+					break loop;
+				}
+
+				case T_LCURL:{
+					// Block
+					expressionLCurl(a);
+				}
+
 				case T_RPAREN:
 				case T_COMMA:
 				default:
@@ -554,6 +681,15 @@ public class fParser {
 				break;
 			case TYPE_PRD:
 				typeProdLoop(a);
+				break;
+			case CASE_CLASSES_PRD:
+				caseClassesProdLoop(a);
+				break;
+			case BLOCK_PRD:
+				blockExprProdLoop(a);
+				break;
+			case PATTERN1_PRD:
+				pattern1ProdLoop(a);
 				break;
 			default:
 				throw new RuntimeException("Unexpected ProdRootOp: " + prodRootOp);
