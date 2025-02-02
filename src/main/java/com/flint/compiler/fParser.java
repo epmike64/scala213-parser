@@ -304,6 +304,15 @@ public class fParser {
 		switch (getPrevNKind(a, fTreeNKind.N_IF_KW_LEAF)) {
 			case N_ID_LEAF: {
 				// IF Case Pattern GUARD
+				IfKwPatternGuardLeafNode ifLeafNode = new IfKwPatternGuardLeafNode(a.lastOpN, token);
+				assert a.lastOpN.right() == null;
+				a.lastOpN.setRight(ifLeafNode);
+				next();
+				ifLeafNode.val().ifCondLeafN = expressionProd();
+				accept(T_MATCH);
+				accept(T_LCURL);
+				ifLeafNode.val().ifBodyLeafN = caseClassesProd();
+				accept(T_RCURL);
 			}
 		}
 	}
@@ -521,6 +530,9 @@ public class fParser {
 		}
 	}
 
+	private ProdRootLeafN postfixExprProd() {
+		return postfixExprProd(null, null, null);
+	}
 
 	private ProdRootLeafN expressionProd() {
 		return expressionProd(null, null, null);
@@ -540,6 +552,10 @@ public class fParser {
 
 	private ProdRootLeafN typeProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
 		return commonProd(ProdRootOp.TYPE_PRD, wrapSubExpr, prevNKind, opToken);
+	}
+
+	private ProdRootLeafN postfixExprProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+		return commonProd(ProdRootOp.POSTFIX_EXPR_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
 	private ProdRootLeafN expressionProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
@@ -657,7 +673,9 @@ public class fParser {
 			}
 		}
 	}
+	void postfixExprProdLoop(ProdArgs a) {
 
+	}
 	void expressionProdLoop(ProdArgs a) {
 		loop:
 		while (true) {
@@ -728,6 +746,9 @@ public class fParser {
 		switch (prodRootOp) {
 			case EXPR_PRD:
 				expressionProdLoop(a);
+				break;
+			case POSTFIX_EXPR_PRD:
+				postfixExprProdLoop(a);
 				break;
 			case TYPE_PRD:
 				typeProdLoop(a);
