@@ -308,12 +308,14 @@ public class fParser {
 				assert a.lastOpN.right() == null;
 				a.lastOpN.setRight(ifLeafNode);
 				next();
-				ifLeafNode.val().ifCondLeafN = expressionProd();
+				ifLeafNode.val().ifCondLeafN = postfixExprProd();
 				accept(T_MATCH);
 				accept(T_LCURL);
 				ifLeafNode.val().ifBodyLeafN = caseClassesProd();
 				accept(T_RCURL);
 			}
+			default:
+				throw new RuntimeException("Unexpected token: " + token.kind);
 		}
 	}
 	private void expressionIF(ProdArgs a) {
