@@ -14,7 +14,6 @@ import com.flint.compiler.tree.operators.values.OperatorValue;
 
 
 import static com.flint.compiler.token.fTokenKind.*;
-import static com.flint.compiler.tree.fTree.fTreeNKind.N_CASE_LEAF;
 
 public class fParser {
 	private fToken prevToken;
@@ -164,6 +163,33 @@ public class fParser {
 		return temp;
 	}
 
+	private void pattern1TID(ProdArgs a){
+		switch (a.prevNKind) {
+			case N_ROOT: {
+				// ROOT means after  "case"
+				// ID_LEAF "x"
+				commonTIDAfterRoot(a, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_SEMI, T_NL);
+				a.isContinue = true;
+				return;
+			}
+			case N_ID_LEAF: {
+				a.prevNKind = fTreeNKind.N_ID_OPERATOR;
+				a.lastOpN = insertOpNode(a.lastOpN, token);
+				if (isColonOpT(0)) {
+					next();
+					// ID_OPERATOR is COLON
+					// " x : 'type' "
+					// Parse 'Type' Prod
+					a.lastOpN.setRight(typeProd());
+					expectOneOf(0, T_ID, T_SEMI, T_NL);
+					a.isContinue = true;
+					return;
+				}
+			}
+			default:
+				throw new RuntimeException("Unexpected Previous  NodeKind: " + a.prevNKind);
+		}
+	}
 	private void typeTID(ProdArgs a) {
 		switch (a.prevNKind) {
 			case N_ROOT: {
@@ -194,6 +220,16 @@ public class fParser {
 				throw new RuntimeException("Unexpected Previous  NodeKind: " + a.prevNKind);
 		}
 	}
+	private void commonTIDAfterRoot(ProdArgs a, fTokenKind... expectTypes){
+		// Prev NodeKind is ROOT
+		// ID_LEAF  "x"
+		a.prevNKind = fTreeNKind.N_ID_LEAF;
+		assert a.lastOpN.NKind() == fTreeNKind.N_ROOT;
+		a.lastOpN.setRight(new IdLeafNode(a.lastOpN, (NamedToken) token));
+		next();
+		expectOneOf(0, expectTypes);
+	}
+
 
 	private void expressionTID(ProdArgs a) {
 		//ID, OPERATOR
@@ -228,7 +264,6 @@ public class fParser {
 				// ID_OPERATOR after ( LEAF, FUN_CALL_LEAF )
 				// "x +", "x = ", "x : ", "func(x) + ", "func(x) = ", "func(x) : "
 				a.prevNKind = fTreeNKind.N_ID_OPERATOR;
-				//// Add operator
 				a.lastOpN = insertOpNode(a.lastOpN, token);
 
 				if (isColonOpT(0)) {
@@ -265,7 +300,13 @@ public class fParser {
 				throw new RuntimeException("Unexpected Previous  NodeKind: " + a.prevNKind);
 		}
 	}
-
+	private void pattern1IF(ProdArgs a) {
+		switch (getPrevNKind(a, fTreeNKind.N_IF_KW_LEAF)) {
+			case N_ID_LEAF: {
+				// IF Case Pattern GUARD
+			}
+		}
+	}
 	private void expressionIF(ProdArgs a) {
 		switch (getPrevNKind(a, fTreeNKind.N_IF_KW_LEAF)) {
 			case N_ROOT:
@@ -544,12 +585,22 @@ public class fParser {
 		}
 	}
 
+
 	void pattern1ProdLoop(ProdArgs a) {
 		loop:
 		while (true) {
 			a.isContinue = false;
 			switch (token.kind) {
-
+				case T_ID: {
+					pattern1TID(a);
+					assert a.isContinue == true;
+					continue;
+				}
+				case T_IF: {
+					pattern1IF(a);
+					assert a.isContinue == true;
+					continue;
+				}
 				default:
 					break loop;
 			}
