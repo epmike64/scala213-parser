@@ -14,6 +14,7 @@ import com.flint.compiler.tree.operators.values.OperatorValue;
 
 
 import static com.flint.compiler.token.fTokenKind.*;
+import static com.flint.compiler.tree.fTree.fTreeNKind.N_CASE_LEAF;
 
 public class fParser {
 	private fToken prevToken;
@@ -292,8 +293,8 @@ public class fParser {
 		}
 	}
 
-	private ProdRootLeafN patterns(ProdRootLeafN rootLeaf) {
-		rootLeaf = pattern1Prod(rootLeaf, fTreeNKind.N_ID_LEAF, null);
+	private ProdRootLeafN patterns() {
+		ProdRootLeafN rootLeaf = pattern1Prod(null, fTreeNKind.N_ID_LEAF, null);
 		while (isPipeOpT(0)) {
 			next();
 			rootLeaf = pattern1Prod(rootLeaf, fTreeNKind.N_ID_OPERATOR, prevToken);
@@ -512,6 +513,10 @@ public class fParser {
 		return commonProd(ProdRootOp.BLOCK_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
+	private ProdRootLeafN pattern1Prod() {
+		return pattern1Prod(null, null, null);
+	}
+
 	private ProdRootLeafN pattern1Prod(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
 		return commonProd(ProdRootOp.PATTERN1_PRD, wrapSubExpr, prevNKind, opToken);
 	}
@@ -584,18 +589,15 @@ public class fParser {
 		}
 	}
 
-	void casePatterns(ProdArgs a){
-		switch (getPrevNKind(a,)){
-
-		}
-	}
 	void caseClassesProdLoop(ProdArgs a) {
 		loop:
 		while (true) {
 			a.isContinue = false;
 			switch (token.kind) {
 				case T_CASE: {
-					casePatterns(a);
+					next();
+					ProdRootLeafN rootLeaf = patterns();
+					a.lastOpN.setRight(rootLeaf);
 					continue;
 				}
 				case T_RCURL:
@@ -610,10 +612,6 @@ public class fParser {
 		while (true) {
 			a.isContinue = false;
 			switch (token.kind) {
-
-				case T_SEMI: {
-					break loop;
-				}
 
 				case T_ID: {//ID, OPERATOR
 					expressionTID(a);
@@ -648,6 +646,7 @@ public class fParser {
 					expressionLCurl(a);
 				}
 
+				case T_SEMI:
 				case T_RPAREN:
 				case T_COMMA:
 				default:
@@ -655,6 +654,7 @@ public class fParser {
 			}
 		}
 	}
+
 	private ProdRootLeafN commonProd(ProdRootOp prodRootOp, ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
 
 		ProdArgs a = new ProdArgs();
@@ -734,8 +734,9 @@ public class fParser {
 
 	public CommonOpNode compilationUnit() {
 		RootOpN root = new RootOpN(ProdRootOp.COMP_UNIT_PRD);
-		root.setRight(expressionProd());
+//		root.setRight(expressionProd());
 //		root.setRight(type());
+		root.setRight(pattern1Prod());
 		return root;
 	}
 }
