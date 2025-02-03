@@ -9,6 +9,7 @@ import com.flint.compiler.token.type.NamedToken;
 import com.flint.compiler.token.type.fToken;
 import com.flint.compiler.tree.fTree.*;
 import com.flint.compiler.tree.leaves.nodes.*;
+import com.flint.compiler.tree.leaves.values.ConstrPatternLeafValue;
 import com.flint.compiler.tree.operators.nodes.*;
 import com.flint.compiler.tree.operators.values.OperatorValue;
 
@@ -632,6 +633,22 @@ public class fParser {
 		}
 	}
 
+	void pattern1LParen(ProdArgs a){
+		switch (a.prevNKind){
+			case N_ID_LEAF: {
+				accept(T_LPAREN);
+				assert a.lastOpN.right() == null;
+				ConstrPatternLeafNode constrPatternLeafNode = new ConstrPatternLeafNode(a.lastOpN, prevToken);
+				constrPatternLeafNode.val().patternLeafN = pattern();
+				a.lastOpN.setRight(constrPatternLeafNode);
+				accept(T_RPAREN);
+				expectOneOf(0, T_ID, T_SEMI, T_NL);
+			}
+			default:
+				throw new RuntimeException("Unexpected token: " + token.kind);
+		}
+	}
+
 	void pattern1ProdLoop(ProdArgs a) {
 		loop:
 		while (true) {
@@ -643,9 +660,9 @@ public class fParser {
 					break loop;
 				}
 				case T_LPAREN: {
-//					pattern1IFGuard(a);
-//					assert a.isContinue == true;
-//					continue;
+					pattern1LParen(a);
+					assert a.isContinue == true;
+					continue;
 				}
 				default:
 					break loop;
