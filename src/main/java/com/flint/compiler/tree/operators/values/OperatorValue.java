@@ -9,6 +9,7 @@ public class OperatorValue implements fTree.BsNodeValue {
 	final public fToken op_token;
 
 	public OperatorValue(fOperatorKind kind, fToken op_token) {
+		assert kind != null;
 		this.kind = kind;
 		this.op_token = op_token;
 	}

@@ -785,8 +785,22 @@ public class fParser {
 
 		} else {//wrapped with parenthesis sub-expression
 			if (prevNKind == fTreeNKind.N_ID_OPERATOR) {
-				assert opToken.kind == T_COMMA;
-				a.lastOpN = new OperatorNode(a.lastOpN, wrapSubExpr, null, new OperatorValue(fOperatorKind.O_COMMA, opToken));
+				// COMMA, PIPE
+				fOperatorKind opKind = null;
+				switch(opToken.kind) {
+					case T_COMMA:
+						opKind = fOperatorKind.O_COMMA;
+						break;
+					case T_ID:
+						if(isPipeOpT(0)){
+							opKind = fOperatorKind.O_PIPE;
+							break;
+						}
+					default:
+						throw new RuntimeException("Unexpected Operator Token: " + opToken.kind);
+				}
+				a.lastOpN = new OperatorNode(a.lastOpN, wrapSubExpr, null, new OperatorValue(opKind, opToken));
+
 			} else {
 				a.lastOpN = new RootOpN(prodRootOp);
 				a.lastOpN.setRight(wrapSubExpr);
