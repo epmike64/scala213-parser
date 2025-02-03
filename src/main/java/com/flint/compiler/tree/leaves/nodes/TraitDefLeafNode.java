@@ -8,4 +8,8 @@ public class TraitDefLeafNode  extends CommonLeafNode {
 	public TraitDefLeafNode(fTree.BsNode parent, fToken token) {
 		super(parent, fTree.fTreeNKind.N_TRAIT_DEF_LEAF, new TraitDefLeafValue(token));
 	}
+
+	public TraitDefLeafValue val() {
+		return (TraitDefLeafValue) value;
+	}
 }

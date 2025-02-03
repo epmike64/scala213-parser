@@ -612,31 +612,49 @@ public class fParser {
 		patDefLeafNode.val().exprLeafN = expressionProd();
 	}
 
-	void funDef(ProdArgs a) {
+	ProdRootLeafN typeParams() {
 		throw new RuntimeException("Not implemented");
+	}
+	ProdRootLeafN params() {
+		throw new RuntimeException("Not implemented");
+	}
+
+	void funDef(ProdArgs a) {
+		accept(T_DEF);
+		FunDclLeafNode funDclLeafNode = new FunDclLeafNode(a.lastOpN, token);
+		funDclLeafNode.val().funName = "funName";
+		accept(T_ID);
+		if(token.kind == T_LBRACKET) {
+			funDclLeafNode.val().funTypeParamsLeafN = typeParams();
+			accept(T_RBRACKET);
+		}
+		accept(T_LPAREN);
+		funDclLeafNode.val().funParamsLeafN = params();
+		accept(T_RPAREN);
 	}
 
 	void typeDef(ProdArgs a) {
-		throw new RuntimeException("Not implemented");
+		TypeDefLeafNode typeDefLeafNode = new TypeDefLeafNode(a.lastOpN, token);
 	}
 
 	void traitDef(ProdArgs a) {
-		throw new RuntimeException("Not implemented");
+		TraitDefLeafNode traitDefLeafNode = new TraitDefLeafNode(a.lastOpN, token);
 	}
 
-	void classDef(ProdArgs a) {
-		throw new RuntimeException("Not implemented");
+	void classDef(ProdArgs a, boolean isCase) {
+		ClassDefLeafNode classDefLeafNode = new ClassDefLeafNode(a.lastOpN, token);
 	}
 
-	void objectDef(ProdArgs a) {
-		throw new RuntimeException("Not implemented");
+	void objectDef(ProdArgs a, boolean isCase) {
+		ObjectDefLeafNode objectDefLeafNode = new ObjectDefLeafNode(a.lastOpN, token);
 	}
 
 	void blockStatProdLoop(ProdArgs a) {
+		boolean isCase = false;
 		loop:
+
 		while (true) {
 			a.isContinue = false;
-			boolean isCase = false;
 			switch (token.kind) {
 				case T_VAL: {
 					patDef(a);
@@ -668,12 +686,14 @@ public class fParser {
 				}
 
 				case T_CLASS: {
-					classDef(a);
+					classDef(a, isCase);
+					isCase = false;
 					continue;
 				}
 
 				case T_OBJECT: {
-					objectDef(a);
+					objectDef(a, isCase);
+					isCase = false;
 					continue;
 				}
 

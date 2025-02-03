@@ -8,4 +8,8 @@ public class FunDclLeafNode extends CommonLeafNode {
 	public FunDclLeafNode(fTree.BsNode parent, fToken token) {
 		super(parent, fTree.fTreeNKind.N_FUN_DCL_LEAF, new FunDclLeafValue(token));
 	}
+
+	public FunDclLeafValue val() {
+		return (FunDclLeafValue) value;
+	}
 }

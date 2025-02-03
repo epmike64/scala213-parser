@@ -8,4 +8,8 @@ public class TypeDefLeafNode extends CommonLeafNode {
 	public TypeDefLeafNode(fTree.BsNode parent, fToken token) {
 		super(parent, fTree.fTreeNKind.N_TYPE_DEF_LEAF, new TypeDefLeafValue(token));
 	}
+
+	public TypeDefLeafValue val() {
+		return (TypeDefLeafValue) value;
+	}
 }
