@@ -9,7 +9,6 @@ import com.flint.compiler.token.type.NamedToken;
 import com.flint.compiler.token.type.fToken;
 import com.flint.compiler.tree.fTree.*;
 import com.flint.compiler.tree.leaves.nodes.*;
-import com.flint.compiler.tree.leaves.values.ConstrPatternLeafValue;
 import com.flint.compiler.tree.operators.nodes.*;
 import com.flint.compiler.tree.operators.values.OperatorValue;
 
