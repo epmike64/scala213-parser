@@ -1,5 +1,6 @@
 package com.flint.compiler.token.type;
 
+import com.flint.compiler.token.OpChar;
 import com.flint.compiler.token.fTokenKind;
 
 public class fToken {
@@ -11,6 +12,10 @@ public class fToken {
 		this.kind = kind;
 		this.pos = pos;
 		this.endPos = endPos;
+	}
+
+	public OpChar opChar() {
+		return OpChar.INVALID;
 	}
 
 	public String name() {

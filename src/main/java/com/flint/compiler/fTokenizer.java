@@ -1,5 +1,6 @@
 package com.flint.compiler;
 
+import com.flint.compiler.token.OpChar;
 import com.flint.compiler.token.fTokenKind;
 import com.flint.compiler.token.fTokenMap;
 import com.flint.compiler.token.type.NamedToken;
@@ -36,6 +37,7 @@ public class fTokenizer {
 
 		int pos = 0;
 		int endPos = 0;
+		OpChar opChar = OpChar.INVALID;
 
 		loop:
 		while (true) {
@@ -104,7 +106,7 @@ public class fTokenizer {
 				default:
 
 					if (isOpChar(reader.ch)) {
-						scanIdent(pos);
+						opChar = scanIdent(pos);
 						break loop;
 					}
 
@@ -115,7 +117,7 @@ public class fTokenizer {
 		endPos = reader.bp;
 		switch (tk.tag) {
 			case DEFAULT: return new fToken(tk, pos, endPos);
-			case NAMED: return new NamedToken(tk, pos, endPos, tname);
+			case NAMED: return new NamedToken(tk, pos, endPos, tname, opChar);
 			case STRING: return new StringToken(tk, pos, endPos, tname);
 			case NUMERIC: return new NumericToken(tk, pos, endPos, tname, radix);
 			default: throw new AssertionError();
@@ -199,7 +201,32 @@ public class fTokenizer {
 		}
 	}
 
-	private void scanIdent(int pos)  {
+	private OpChar getOpChar(char ch) {
+		switch (ch) {
+			case '!': return OpChar.BANG;
+			case '#': return OpChar.POUND;
+			case '%': return OpChar.PERCENT;
+			case '&': return OpChar.AMPERSAND;
+			case '*': return OpChar.STAR;
+			case '+': return OpChar.PLUS;
+			case '-': return OpChar.MINUS;
+			case '/': return OpChar.FORWARD_SLASH;
+			case ':': return OpChar.COLON;
+			case '<': return OpChar.LT;
+			case '=': return OpChar.ASSIGN;
+			case '>': return OpChar.GT;
+			case '?': return OpChar.QUESTION;
+			case '@': return OpChar.AT;
+			case '\\': return OpChar.BACKSLASH;
+			case '^': return OpChar.CARET;
+			case '|': return OpChar.PIPE;
+			case '~': return OpChar.TILDE;
+			default:
+				return OpChar.INVALID;
+		}
+	}
+
+	private OpChar scanIdent(int pos)  {
 
 		boolean seenOpChar = false;
 		if (isOpChar(reader.ch)) {
@@ -246,6 +273,9 @@ public class fTokenizer {
 
 		tname = reader.name();
 		tk = fTokenMap.lookupKind(tname);
+		if(tk == fTokenKind.T_ID && tname.length() == 1){
+			return getOpChar(tname.charAt(0));
+		}
+		return OpChar.INVALID;
 	}
-
 }

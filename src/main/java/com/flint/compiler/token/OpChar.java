@@ -1,6 +1,7 @@
 package com.flint.compiler.token;
 
 public enum OpChar {
+	INVALID((char) 0x0),
 	COLON(':'),
 	ASSIGN('='),
 	STAR('*'),
