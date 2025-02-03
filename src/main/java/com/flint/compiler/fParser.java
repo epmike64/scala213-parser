@@ -168,23 +168,35 @@ public class fParser {
 			case N_ROOT: {
 				// ROOT means after  "case"
 				// ID_LEAF "x"
-				commonTIDAfterRoot(a, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_SEMI, T_NL);
+				prodFirstIdLeaf(a, T_ID, T_LPAREN, T_RPAREN, T_SEMI, T_NL);
 				a.isContinue = true;
 				return;
 			}
+			case N_ID_OPERATOR: {
+				// SimplePatternA {OP SimplePatternB }
+				// SimplePatternB
+
+			}
 			case N_ID_LEAF: {
-				a.prevNKind = fTreeNKind.N_ID_OPERATOR;
+				// SimplePattern {OP SimplePattern}
 				a.lastOpN = insertOpNode(a.lastOpN, token);
 				if (isColonOpT(0)) {
+					// Id : Type
+					a.prevNKind = fTreeNKind.N_ID_LEAF;
 					next();
-					// ID_OPERATOR is COLON
-					// " x : 'type' "
-					// Parse 'Type' Prod
 					a.lastOpN.setRight(typeProd());
 					expectOneOf(0, T_ID, T_SEMI, T_NL);
+					//Pattern1 = id: type { | Pattern1 }
+					a.isContinue = false;
+
+				} else {
+					a.prevNKind = fTreeNKind.N_ID_OPERATOR;
+					next();
+					expectOneOf(0, T_ID, T_SEMI, T_NL);
+					//Pattern3 = SimplePattern (id SimplePattern)*
 					a.isContinue = true;
-					return;
 				}
+				return;
 			}
 			default:
 				throw new RuntimeException("Unexpected Previous  NodeKind: " + a.prevNKind);
@@ -222,41 +234,57 @@ public class fParser {
 		}
 	}
 
-	private void commonTIDAfterRoot(ProdArgs a, fTokenKind... expectTypes) {
+	private void prodFirstIdLeaf(ProdArgs a, fTokenKind... expectTypes) {/*
+			assert a.lastOpN.NKind() == fTreeNKind.N_ROOT;
+			a.prevNKind = fTreeNKind.N_ID_LEAF;
+			a.lastOpN.setRight(new IdLeafNode(a.lastOpN, (NamedToken) token));
+			next();
+			expectOneOf(0, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_ELSE, T_FAT_ARROW, T_SEMI, T_NL);
+	*/
 		// Prev NodeKind is ROOT
 		// ID_LEAF  "x"
-		a.prevNKind = fTreeNKind.N_ID_LEAF;
 		assert a.lastOpN.NKind() == fTreeNKind.N_ROOT;
+		a.prevNKind = fTreeNKind.N_ID_LEAF;
 		a.lastOpN.setRight(new IdLeafNode(a.lastOpN, (NamedToken) token));
 		next();
 		expectOneOf(0, expectTypes);
 	}
 
-
-	private void expressionTID(ProdArgs a) {
-		//ID, OPERATOR
-		switch (a.prevNKind) {
-			case N_ROOT: {
-				// ID_LEAF
-				// "x"
-				a.prevNKind = fTreeNKind.N_ID_LEAF;
-				assert a.lastOpN.NKind() == fTreeNKind.N_ROOT;
-				a.lastOpN.setRight(new IdLeafNode(a.lastOpN, (NamedToken) token));
-				next();
-				expectOneOf(0, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_ELSE, T_FAT_ARROW, T_SEMI, T_NL);
-				a.isContinue = true;
-				return;
-			}
-
-			case N_ID_OPERATOR: {
-				//  ID_LEAF after ( ID_OPERATOR, COMMA )
-				// "+ x" or ", x"
-				a.prevNKind = fTreeNKind.N_ID_LEAF;
+	private void prodRightIdLeaf(ProdArgs a, fTokenKind... expectTypes) {/*
+		a.prevNKind = fTreeNKind.N_ID_LEAF;
 				assert a.lastOpN.right() == null;
 				IdLeafNode rightLeaf = new IdLeafNode(a.lastOpN, (NamedToken) token);
 				a.lastOpN.setRight(rightLeaf);
 				next();
 				expectOneOf(0, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_ELSE, T_SEMI, T_NL);
+				a.isContinue = true;
+				return;
+		*/
+		a.prevNKind = fTreeNKind.N_ID_LEAF;
+		assert a.lastOpN.right() == null;
+		a.lastOpN.setRight(new IdLeafNode(a.lastOpN, (NamedToken) token));
+		next();
+		expectOneOf(0, expectTypes);
+	}
+
+	private void prodIdOp(ProdArgs a) {
+		a.prevNKind = fTreeNKind.N_ID_OPERATOR;
+		a.lastOpN = insertOpNode(a.lastOpN, token);
+	}
+
+	private void expressionTID(ProdArgs a) {
+		switch (a.prevNKind) {
+			case N_ROOT: {
+				// ID_LEAF="x"
+				prodFirstIdLeaf(a,  T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_ELSE, T_FAT_ARROW, T_SEMI, T_NL);
+				a.isContinue = true;
+				return;
+			}
+
+			case N_ID_OPERATOR: {
+				//  ID_LEAF=x after ( ID_OPERATOR, COMMA )
+				// "+ x" or ", x"
+				prodRightIdLeaf(a, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_ELSE, T_SEMI, T_NL);
 				a.isContinue = true;
 				return;
 			}
@@ -265,8 +293,7 @@ public class fParser {
 			case N_FUN_CALL_LEAF: {
 				// ID_OPERATOR after ( LEAF, FUN_CALL_LEAF )
 				// "x +", "x = ", "x : ", "func(x) + ", "func(x) = ", "func(x) : "
-				a.prevNKind = fTreeNKind.N_ID_OPERATOR;
-				a.lastOpN = insertOpNode(a.lastOpN, token);
+				prodIdOp(a);
 
 				if (isColonOpT(0)) {
 					next();
@@ -350,7 +377,7 @@ public class fParser {
 	}
 
 	private ProdRootLeafN pattern() {
-		ProdRootLeafN rootLeaf = pattern1Prod(null, fTreeNKind.N_ID_LEAF, null);
+		ProdRootLeafN rootLeaf = pattern1Prod();
 		while (isPipeOpT(0)) {
 			next();
 			rootLeaf = pattern1Prod(rootLeaf, fTreeNKind.N_ID_OPERATOR, prevToken);
@@ -512,31 +539,33 @@ public class fParser {
 		}
 	}
 
-	private void expressionNew(ProdArgs a) {
+	private void postfixExprNew(ProdArgs a) {
 		accept(T_NEW);
 	}
 
 
-	private void expressionLCurl(ProdArgs a) {
+	private void postfixExprLCurl(ProdArgs a) {
 		accept(T_LCURL);
-		switch (a.prevNKind) {
-			// func { BlockExpr }
-			case N_ID_LEAF: {
-				switch (token.kind) {
-					case T_CASE: {
-						ProdRootLeafN caseClasses = caseClassesProd();
-						break;
-					}
-					default: {
-						ProdRootLeafN block = blockProd();
-						return;
+		if (token.kind != T_RCURL) {
+			switch (a.prevNKind) {
+				case N_ROOT: {
+					switch (token.kind) {
+						case T_CASE: {
+							a.lastOpN.setRight(caseClassesProd());
+							break;
+						}
+						default: {
+							a.lastOpN.setRight(blockProd());
+						}
 					}
 				}
+				default:
+					throw new RuntimeException("Unexpected prev NodeKind: " + a.prevNKind);
 			}
-			default:
-				throw new RuntimeException("Unexpected token: " + token.kind);
 		}
+		accept(T_RCURL);
 	}
+
 
 	private ProdRootLeafN postfixExprProd() {
 		return postfixExprProd(null, null, null);
@@ -625,14 +654,14 @@ public class fParser {
 			switch (token.kind) {
 				case T_ID: {
 					pattern1TID(a);
-					assert a.isContinue == true;
-					continue;
+					if(a.isContinue) continue;
+					break loop;
 				}
-//				case T_IF: {
+				case T_LPAREN: {
 //					pattern1IFGuard(a);
 //					assert a.isContinue == true;
 //					continue;
-//				}
+				}
 				default:
 					break loop;
 			}
@@ -674,16 +703,16 @@ public class fParser {
 
 	void caseClassesCase(ProdArgs a) {
 		accept(T_CASE);
-		ProdRootLeafN rootLeaf = pattern();
-		a.lastOpN.setRight(rootLeaf);
-		if(token.kind == T_IF) {
+		a.lastOpN.setRight(pattern());
+		if (token.kind == T_IF) {
 			pattern1IFGuard(a);
 		}
 		assert token.kind == T_FAT_ARROW;
 		a.lastOpN = insertOpNode(a.lastOpN, token);
-		assert a.lastOpN.right() == null;
 		next();
+		assert a.lastOpN.right() == null;
 		a.lastOpN.setRight(blockProd());
+		expectOneOf(0, T_CASE, T_RCURL, T_NL, T_SEMI);
 	}
 
 	void caseClassesProdLoop(ProdArgs a) {
@@ -703,30 +732,18 @@ public class fParser {
 	}
 
 	void postfixExprProdLoop(ProdArgs a) {
-		loop:
-		while (true) {
-			a.isContinue = false;
-			switch (token.kind) {
-				case T_ID: {//ID, OPERATOR
-					expressionTID(a);
-					assert a.isContinue == true;
-					continue;
-				}
-				case T_LPAREN: {
-					expressionLParen(a);
-					assert a.isContinue == true;
-					continue;
-				}
-				case T_NEW:
-					expressionNew(a);
-					break loop;
-				case T_LCURL:
-					expressionLCurl(a);
-					break loop;
-				default:
-					break loop;
-			}
+
+		switch (token.kind) {
+			case T_NEW:
+				postfixExprNew(a);
+				break;
+			case T_LCURL:
+				postfixExprLCurl(a);
+				break;
+			default:
+				break;
 		}
+
 	}
 
 	void expressionProdLoop(ProdArgs a) {
@@ -758,14 +775,10 @@ public class fParser {
 					break loop;
 				}
 
-				case T_NEW: {
-					expressionNew(a);
-					break loop;
-				}
-
+				case T_NEW:
 				case T_LCURL: {
-					// Block
-					expressionLCurl(a);
+					a.lastOpN.setRight(postfixExprProd());
+					break loop;
 				}
 
 				case T_SEMI:
