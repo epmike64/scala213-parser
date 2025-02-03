@@ -598,17 +598,18 @@ public class fParser {
 	}
 
 	void varDef(ProdArgs a) {
-		throw new RuntimeException("Not implemented");
+		patDef(a);
 	}
 
 	void patDef(ProdArgs a) {
-		ProdRootLeafN p = pattern2s();
-		next();
+		PatDefLeafNode patDefLeafNode = new PatDefLeafNode(a.lastOpN, token);
+		patDefLeafNode.val().pattern2sLeafN = pattern2s();
 		if(isColonOpT(0)) {
 			next();
-			ProdRootLeafN t = typeProd();
+			patDefLeafNode.val().typeLeafN = typeProd();
 		}
 		acceptOpChar(OpChar.ASSIGN);
+		patDefLeafNode.val().exprLeafN = expressionProd();
 	}
 
 	void funDef(ProdArgs a) {

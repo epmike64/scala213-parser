@@ -6,8 +6,9 @@ public interface fTree {
 	}
 
 	enum fTreeNKind {
-		N_ROOT, N_ID_OPERATOR, N_IF_KW_LEAF, N_CASE_KW_LEAF, N_CONSTR_PATTERN_LEAF, N_GUARD_LEAF, N_PROD_ROOT_LEAF, N_ELSE_KW_LEAF,  N_ID_LEAF, N_FUN_CALL_LEAF, N_CASE_LEAF,  N_TYPE_LEAF,N_COMMA, N_FAT_ARROW, N_LPAREN, N_LCURL /*N_RPAREN*/
+		N_ROOT, N_ID_OPERATOR, N_CLASS_DEF_LEAF, N_TYPE_DEF_LEAF, N_TRAIT_DEF_LEAF, N_OBJECT_DEF_LEAF, N_IF_KW_LEAF, N_FUN_DCL_LEAF, N_CASE_KW_LEAF, N_PAT_DEF_LEAF, N_CONSTR_PATTERN_LEAF, N_GUARD_LEAF, N_PROD_ROOT_LEAF, N_ELSE_KW_LEAF, N_ID_LEAF, N_FUN_CALL_LEAF, N_CASE_LEAF, N_TYPE_LEAF, N_COMMA, N_FAT_ARROW, N_LPAREN, N_LCURL /*N_RPAREN*/
 	}
+
 	/**
 	 * Base Node for the tree
 	 */
@@ -29,14 +30,18 @@ public interface fTree {
 		public BsNodeValue val() {
 			return value;
 		}
+
 		@Override
 		public String toString() {
 			return value.toString();
 		}
 
-		public abstract void setLeft(BsNode left) ;
-		public abstract void setRight(BsNode right) ;
+		public abstract void setLeft(BsNode left);
+
+		public abstract void setRight(BsNode right);
+
 		public abstract BsNode left();
-		public abstract BsNode right() ;
+
+		public abstract BsNode right();
 	}
 }
