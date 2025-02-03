@@ -227,15 +227,6 @@ public class fParser {
 		}
 	}
 
-//	private void prodTailoredFirstIdLeaf(ProdArgs a, fTreeNKind setNKind, CommonLeafNode setLeaf) {
-//		assert setNKind != null && setLeaf != null;
-//		assert a.lastOpN.NKind() == fTreeNKind.N_ROOT;
-//		assert a.lastOpN.right() == null;
-//		a.prevNKind = setNKind;
-//		a.lastOpN.setRight(setLeaf);
-//		next();
-//	}
-
 	private void prodFirstIdLeaf(ProdArgs a, fTokenKind... expectTypes) {
 		assert a.lastOpN.NKind() == fTreeNKind.N_ROOT;
 		a.prevNKind = fTreeNKind.N_ID_LEAF;
@@ -314,26 +305,6 @@ public class fParser {
 				throw new RuntimeException("Unexpected Previous  NodeKind: " + a.prevNKind);
 		}
 	}
-
-//	private void pattern1IFGuard(ProdArgs a) {
-//		switch (a.prevNKind) {
-//			case N_ID_LEAF: {
-//				// IF Case Pattern GUARD
-//				IfKwPatternGuardLeafNode ifLeafNode = new IfKwPatternGuardLeafNode(a.lastOpN, token);
-//				prodTailoredFirstIdLeaf(a, fTreeNKind.N_IF_KW_LEAF, ifLeafNode);
-//				assert a.lastOpN.right() == null;
-//				a.lastOpN.setRight(ifLeafNode);
-//				next();
-//				ifLeafNode.val().ifCondLeafN = postfixExprProd();
-//				accept(T_MATCH);
-//				accept(T_LCURL);
-//				ifLeafNode.val().ifBodyLeafN = caseClassesProd();
-//				accept(T_RCURL);
-//			}
-//			default:
-//				throw new RuntimeException("Unexpected token: " + token.kind);
-//		}
-//	}
 
 	private void expressionIF(ProdArgs a) {
 		switch (getPrevNKind(a, fTreeNKind.N_IF_KW_LEAF)) {
