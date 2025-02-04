@@ -19,6 +19,7 @@ public class fParser {
 	private fToken prevToken;
 	private fToken token;
 	private fLexer lexer;
+	private static final fToken Semicolon = new NamedToken(T_SEMI, -1, -1, ";", OpChar.INVALID);
 
 	public fParser(fLexer lexer) {
 		this.lexer = lexer;
@@ -242,6 +243,31 @@ public class fParser {
 		expectOneOf(0, expectTypes);
 	}
 
+	private void prodFirstCommonLeaf(ProdArgs a,  CommonLeafNode leafNode, boolean isNext, int la, fTokenKind... expectTypes) {
+		assert a.lastOpN.NKind() == fTreeNKind.N_ROOT;
+		a.prevNKind = fTreeNKind.N_ID_LEAF;
+		a.lastOpN.setRight(leafNode);
+		if(isNext) {
+			next();
+		}
+		if(expectTypes != null) {
+			expectOneOf(la, expectTypes);
+		}
+	}
+
+	private void prodRightCommonLeaf(ProdArgs a,   CommonLeafNode leafNode, boolean isNext, int la, fTokenKind... expectTypes){
+		assert a.lastOpN.right() == null;
+		a.prevNKind = fTreeNKind.N_ID_LEAF;
+		a.lastOpN.setRight(leafNode);
+		if(isNext) {
+			next();
+		}
+		if(expectTypes != null) {
+			expectOneOf(la, expectTypes);
+		}
+	}
+
+
 	private void prodRightIdLeaf(ProdArgs a, fTokenKind... expectTypes) {
 		assert a.lastOpN.right() == null;
 		a.prevNKind = fTreeNKind.N_ID_LEAF;
@@ -350,13 +376,12 @@ public class fParser {
 	}
 
 	private ProdRootLeafN pattern2s() {
-//		ProdRootLeafN rootLeaf = pattern2();
-//		while (isPipeOpT(0)) {
-//			next();
-//			rootLeaf = pattern2(rootLeaf, fTreeNKind.N_ID_OPERATOR, prevToken);
-//		}
-//		return rootLeaf;
-		throw new RuntimeException("Not implemented");
+		ProdRootLeafN rootLeaf = pattern2();
+		while (token.kind == T_COMMA) {
+			next();
+			rootLeaf = pattern2(rootLeaf, fTreeNKind.N_ID_OPERATOR, prevToken);
+		}
+		return rootLeaf;
 	}
 
 	private ProdRootLeafN exprs(ProdRootLeafN rootLeaf) {
@@ -602,14 +627,28 @@ public class fParser {
 	}
 
 	void patDef(ProdArgs a) {
+		accept(T_VAL);
 		PatDefLeafNode patDefLeafNode = new PatDefLeafNode(a.lastOpN, token);
 		patDefLeafNode.val().pattern2sLeafN = pattern2s();
-		if(isColonOpT(0)) {
+		if (isColonOpT(0)) {
 			next();
 			patDefLeafNode.val().typeLeafN = typeProd();
 		}
 		acceptOpChar(OpChar.ASSIGN);
 		patDefLeafNode.val().exprLeafN = expressionProd();
+		switch (getPrevNKind(a, fTreeNKind.N_ID_LEAF)) {
+			case N_ROOT: {
+				// ROOT="val x"
+				prodFirstCommonLeaf(a, patDefLeafNode, false, 0, T_ID, T_SEMI, T_NL);
+				break;
+			}
+			case N_ID_OPERATOR: {
+				prodRightCommonLeaf(a, patDefLeafNode, false, 0, T_ID, T_SEMI, T_NL);
+				break;
+			}
+			default:
+				throw new RuntimeException("Unexpected Previous  NodeKind: " + a.prevNKind);
+		}
 	}
 
 	ProdRootLeafN typeParams() {
@@ -719,6 +758,7 @@ public class fParser {
 		accept(T_DEF);
 		FunDclLeafNode funDclLeafNode = new FunDclLeafNode(a.lastOpN, token);
 		funSig(a);
+		//this
 	}
 
 	void typeDef(ProdArgs a) {
@@ -739,18 +779,18 @@ public class fParser {
 
 	void blockStatProdLoop(ProdArgs a) {
 		boolean isCase = false;
-		loop:
+		boolean loop = true;
 
-		while (true) {
-			a.isContinue = false;
+		while (loop) {
+
 			switch (token.kind) {
 				case T_VAL: {
 					patDef(a);
-					continue;
+					break;
 				}
 				case T_VAR: {
 					varDef(a);
-					continue;
+					break;
 				}
 
 				case T_DEF: {
@@ -762,6 +802,7 @@ public class fParser {
 					typeDef(a);
 					break;
 				}
+
 				case T_TRAIT:
 					traitDef(a);
 					break;
@@ -770,23 +811,29 @@ public class fParser {
 					isCase = true;
 					next();
 					expectOneOf(0, T_CLASS, T_OBJECT);
-					continue;
+					break;
 				}
 
 				case T_CLASS: {
 					classDef(a, isCase);
 					isCase = false;
-					continue;
+					break;
 				}
 
 				case T_OBJECT: {
 					objectDef(a, isCase);
 					isCase = false;
-					continue;
+					break;
 				}
 
+				case T_ID:
 				default:
-					break loop;
+					loop = false;
+					break;
+			}
+			if(!isCase){
+				a.lastOpN = insertOpNode(a.lastOpN, Semicolon);
+				a.prevNKind = fTreeNKind.N_ID_OPERATOR;
 			}
 		}
 	}

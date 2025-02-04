@@ -22,6 +22,8 @@ public class fOperatorMap {
 				return fOperatorKind.O_COMMA;
 			case T_FAT_ARROW:
 				return fOperatorKind.O_FAT_ARROW;
+			case T_SEMI:
+				return fOperatorKind.O_SEMI;
 			case T_ID:
 				break;
 			default:

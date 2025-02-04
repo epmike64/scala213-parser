@@ -14,6 +14,7 @@ public enum fOperatorKind {
 	O_PIPE("|", 2, false),
 	O_COMMA(",", 2, false),
 	O_LEFT_PAREN("(", 2, false),
+	O_SEMI(";", 1, false),
 	O_ASSIGN("=", 1, false),
 	O_ROOT("", 0, false),
 
