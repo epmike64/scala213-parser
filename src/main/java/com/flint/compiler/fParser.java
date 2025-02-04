@@ -613,24 +613,112 @@ public class fParser {
 	}
 
 	ProdRootLeafN typeParams() {
+		ProdRootLeafN rootLeaf = typeParam();
+		while (token.kind == T_COMMA) {
+			next();
+			rootLeaf = typeParam(rootLeaf, fTreeNKind.N_ID_OPERATOR, prevToken);
+		}
+		return rootLeaf;
+	}
+
+	ProdRootLeafN typeParamClause(){
+		ProdRootLeafN rootLeaf = variantTypeParam();
+		while (token.kind == T_COMMA) {
+			next();
+			rootLeaf = variantTypeParam(rootLeaf, fTreeNKind.N_ID_OPERATOR, prevToken);
+		}
+		return rootLeaf;
+	}
+
+	ProdRootLeafN variantTypeParam() {
+		VariantTypeParamLeafNode variantTypeParamLeafNode = new VariantTypeParamLeafNode(a.lastOpN, token);
+		if(token.kind == T_ID) {
+			switch (token.opChar()) {
+				case MINUS:
+				case PLUS:
+					variantTypeParamLeafNode.val().variant = token.opChar();
+					accept(T_ID);
+					break;
+				case INVALID:
+					break;
+				default:
+					throw new RuntimeException("Unexpected token: " + token.kind);
+			}
+		}
+		variantTypeParamLeafNode.val().typeParamLeafN = typeParam();
+	}
+
+	void typeParam(ProdArgs a) {
+		TypeParamLeafNode typeParamLeafNode = new TypeParamLeafNode(a.lastOpN, token);
+		accept(T_ID);
+		typeParamLeafNode.val().typeParamName = prevToken.name();
+		if(token.kind == T_LBRACKET){
+			accept(T_LBRACKET);
+			typeParamLeafNode.val().typeParamClauseLeafN = typeParamClause();
+			accept(T_RBRACKET);
+		}
+		if(token.kind == T_LOWER_BOUND){
+			next();
+			typeParamLeafNode.val().lowerBoundLeafN = typeProd();
+		}
+		if(token.kind == T_UPPER_BOUND){
+			next();
+			typeParamLeafNode.val().upperBoundLeafN = typeProd();
+		}
+		if (token.kind == T_LESS_PERCENT) {
+			next();
+			typeParamLeafNode.val().lessPercentBoundLeafN = typeProd();
+		}
+		while(token.kind == T_COMMA){
+			next();
+			typeParamLeafNode.val().endTypeLeafNs.add(typeProd());
+		}
+	}
+
+	ProdRootLeafN params() {
+		ProdRootLeafN rootLeaf = param();
+		while (token.kind == T_COMMA) {
+			next();
+			rootLeaf = param(rootLeaf, fTreeNKind.N_ID_OPERATOR, prevToken);
+		}
+		return rootLeaf;
+	}
+
+	ProdRootLeafN param() {
+		ParamLeafNode paramLeafNode = new ParamLeafNode(a.lastOpN, token);
+		accept(T_ID);
+		paramLeafNode.val().paramName = prevToken.name();
+		if (isColonOpT(0)) {
+			next();
+			paramLeafNode.val().paramTypeLeafN = typeProd();
+		}
+		if(isAssignOpT(0)){
+			next();
+			paramLeafNode.val().exprLeafN = expressionProd();
+		}
+	}
+
+
+	ProdRootLeafN paramClauses() {
 		throw new RuntimeException("Not implemented");
 	}
-	ProdRootLeafN params() {
-		throw new RuntimeException("Not implemented");
+
+	void funSig(ProdArgs a) {
+		FunSigLeafNode funSigLeafNode = new FunSigLeafNode(a.lastOpN, token);
+		accept(T_ID);
+		funSigLeafNode.val().funName = prevToken.name();
+		if (token.kind == T_LBRACKET) {
+			accept(T_LBRACKET);
+			funSigLeafNode.val().typeParamsLeafN = typeParams();
+			accept(T_RBRACKET);
+		}
+		funSigLeafNode.val().paramsLeafN = paramClauses();
 	}
 
 	void funDef(ProdArgs a) {
 		accept(T_DEF);
 		FunDclLeafNode funDclLeafNode = new FunDclLeafNode(a.lastOpN, token);
-		funDclLeafNode.val().funName = "funName";
-		accept(T_ID);
-		if(token.kind == T_LBRACKET) {
-			funDclLeafNode.val().funTypeParamsLeafN = typeParams();
-			accept(T_RBRACKET);
-		}
-		accept(T_LPAREN);
-		funDclLeafNode.val().funParamsLeafN = params();
-		accept(T_RPAREN);
+		funSig(a);
 	}
 
 	void typeDef(ProdArgs a) {
