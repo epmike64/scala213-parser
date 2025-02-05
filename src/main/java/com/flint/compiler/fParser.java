@@ -886,11 +886,27 @@ public class fParser {
 	}
 
 	void traitDef(ProdArgs a) {
-		accept(T_TRAIT);
-		TraitDefLeafNode leafNode = new TraitDefLeafNode(a.lastOpN, prevToken);
-		assert a.lastOpN.right() == null;
-		a.lastOpN.setRight(leafNode);
-		a.prevNKind = fTreeNKind.N_ID_LEAF;
+		TraitDefLeafNode leafNode = new TraitDefLeafNode(a.lastOpN, token);
+		setRightLeafProlog(a, T_TRAIT, leafNode);
+		accept(T_ID);
+		leafNode.val().traitName = prevToken.name();
+		if(token.kind == T_LBRACKET){
+			next();
+			leafNode.val().variantTypeParamsLeafN = variantTypeParams();
+			accept(T_RBRACKET);
+		}
+		if(token.kind == T_EXTENDS){
+			next();
+			leafNode.val().extends_ = true;
+		}
+		if(token.kind == T_ID){
+			leafNode.val().traitParentsLeafN = typeProd();
+		}
+		if(token.kind == T_LCURL) {
+			next();
+			leafNode.val().templateBodyLeafN = templateBody();
+			accept(T_RCURL);
+		}
 	}
 
 	ProdRootLeafN templateBody(){
@@ -925,11 +941,8 @@ public class fParser {
 
 
 	void classDef(ProdArgs a, boolean isCase) {
-		accept(T_CLASS);
-		ClassDefLeafNode leafNode = new ClassDefLeafNode(a.lastOpN, prevToken);
-		assert a.lastOpN.right() == null;
-		a.lastOpN.setRight(leafNode);
-		a.prevNKind = fTreeNKind.N_ID_LEAF;
+		ClassDefLeafNode leafNode = new ClassDefLeafNode(a.lastOpN, token);
+		setRightLeafProlog(a, T_CLASS, leafNode);
 
 		accept(T_ID);
 		leafNode.val().className = prevToken.name();
@@ -946,11 +959,11 @@ public class fParser {
 	}
 
 	void objectDef(ProdArgs a, boolean isCase) {
-		accept(T_OBJECT);
-		ObjectDefLeafNode leafNode = new ObjectDefLeafNode(a.lastOpN, prevToken);
-		assert a.lastOpN.right() == null;
-		a.lastOpN.setRight(leafNode);
-		a.prevNKind = fTreeNKind.N_ID_LEAF;
+		ObjectDefLeafNode leafNode = new ObjectDefLeafNode(a.lastOpN, token);
+		setRightLeafProlog(a, T_OBJECT, leafNode);
+		accept(T_ID);
+		leafNode.val().objectName = prevToken.name();
+		leafNode.val().isCase = isCase;
 	}
 
 	void blockStatProdLoop(ProdArgs a) {
@@ -1106,16 +1119,17 @@ public class fParser {
 	}
 
 	void caseClassesCase(ProdArgs a) {
-		accept(T_CASE);
-		CaseKwLeafNode caseLeaf = new CaseKwLeafNode(a.lastOpN, prevToken);
-		assert a.lastOpN.right() == null;
-		caseLeaf.val().patternLeafN = pattern();
+
+		CaseKwLeafNode leafNode = new CaseKwLeafNode(a.lastOpN, token);
+		setRightLeafProlog(a, T_CASE, leafNode);
+
+		leafNode.val().patternLeafN = pattern();
 		if (token.kind == T_IF) {
 			next();
-			caseLeaf.val().guardLeafN = postfixExprProd();
+			leafNode.val().guardLeafN = postfixExprProd();
 		}
 		accept(T_FAT_ARROW);
-		caseLeaf.val().blockLeafN = blockProd();
+		leafNode.val().blockLeafN = blockProd();
 		expectOneOf(0, T_CASE, T_RCURL, T_NL, T_SEMI);
 	}
 
@@ -1193,6 +1207,7 @@ public class fParser {
 			}
 		}
 	}
+
 
 	private ProdRootLeafN commonProd(ProdRootOp prodRootOp, ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
 
@@ -1295,11 +1310,67 @@ public class fParser {
 		return higher;
 	}
 
-	public CommonOpNode compilationUnit() {
-		RootOpN root = new RootOpN(ProdRootOp.COMP_UNIT_PRD);
-//		root.setRight(expressionProd());
-//		root.setRight(type());
-		root.setRight(pattern1Prod());
-		return root;
+	private void tmplDef(ProdArgs a){
+		boolean isCase = false;
+		if(token.kind == T_CASE){
+			isCase = true;
+			next();
+		}
+		if(token.kind == T_CLASS){
+			classDef(a, isCase);
+		} else if(token.kind == T_OBJECT){
+			objectDef(a, isCase);
+		} else {
+			throw new RuntimeException("Unexpected token: " + token.kind);
+		}
 	}
+
+	private void importDef(ProdArgs a){
+		ImportDefLeafNode leafNode = new ImportDefLeafNode(a.lastOpN, token);
+		setRightLeafProlog(a, T_IMPORT,leafNode);
+		accept(T_ID);
+		leafNode.val().importPath = prevToken.name();
+	}
+
+
+	private void setRightLeafProlog(ProdArgs a, fTokenKind accKind, CommonLeafNode leafNode) {
+		accept(accKind);
+		assert a.lastOpN.right() == null;
+		a.lastOpN.setRight(leafNode);
+		a.prevNKind = fTreeNKind.N_ID_LEAF;
+	}
+
+	private void insertSemiOp(ProdArgs a) {
+		a.lastOpN = insertOpNode(a.lastOpN, Semicolon);
+		a.prevNKind = fTreeNKind.N_ID_OPERATOR;
+	}
+
+	private ProdArgs initRootNodeProlog(ProdRootOp prodRootOp){
+		ProdArgs a = new ProdArgs();
+		a.lastOpN = new RootOpN(prodRootOp);
+		a.prevNKind = fTreeNKind.N_ROOT;
+		return a;
+	}
+
+	public CommonOpNode compilationUnit() {
+		ProdArgs a = initRootNodeProlog(ProdRootOp.COMP_UNIT_PRD);
+
+		while (token.kind != T_EOF) {
+			switch (token.kind) {
+				case T_CASE:
+				case T_TRAIT:
+				case T_CLASS: {
+					tmplDef(a);
+					break;
+				}
+				case T_IMPORT: {
+					importDef(a);
+					break;
+				}
+			}
+			insertSemiOp(a);
+		}
+		return a.lastOpN;
+	}
+
 }
