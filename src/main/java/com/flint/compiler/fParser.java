@@ -25,10 +25,11 @@ public class fParser {
 		next();
 	}
 
-	void next() {
+	fToken next() {
 		prevToken = token;
 		token = lexer.nextToken();
 		System.out.println("Token: " + token);
+		return prevToken;
 	}
 
 	private void acceptOpChar(OpChar opChar) {
@@ -631,11 +632,9 @@ public class fParser {
 	}
 
 	void patDef(ProdArgs a) {
-		accept(T_VAL);
-		PatDefLeafNode leafNode = new PatDefLeafNode(a.lastOpN, prevToken);
-		assert a.lastOpN.right() == null;
-		a.lastOpN.setRight(leafNode);
-		a.prevNKind = fTreeNKind.N_ID_LEAF;
+
+		PatDefLeafNode leafNode = new PatDefLeafNode(a.lastOpN, token);
+		setRightLeafProlog(a, T_VAL, leafNode);
 
 		leafNode.val().pattern2sLeafN = pattern2s();
 		if (isColonOpT(0)) {
@@ -660,42 +659,31 @@ public class fParser {
 	}
 
 	ProdRootLeafN typeParams() {
-		ProdArgs a = new ProdArgs();
-		a.lastOpN = new RootOpN(ProdRootOp.TYPE_PARAM_PRD);
-		a.prevNKind = fTreeNKind.N_ROOT;
-		a.lastOpN.setRight(typeParam());
+		ProdArgs a = initRootNodeProlog(ProdRootOp.TYPE_PARAM_PRD);
+		setRightLeaf(a, typeParam());
 		while (token.kind == T_COMMA) {
-			next();
-			a.lastOpN = insertOpNode(a.lastOpN, prevToken);
-			a.prevNKind = fTreeNKind.N_ID_OPERATOR;
-			a.lastOpN.setRight(typeParam());
+			insertCommaOp(a, next());
+			setRightLeaf(a, typeParam());
 		}
-		return new ProdRootLeafN(null, a.lastOpN);
+		return prodRootLeafN(a);
 	}
 
 	ProdRootLeafN variantTypeParams() {
 
-		ProdArgs a = new ProdArgs();
-		a.lastOpN = new RootOpN(ProdRootOp.TYPE_PARAM_PRD);
-		a.prevNKind = fTreeNKind.N_ROOT;
-		a.lastOpN.setRight(variantTypeParam());
+		ProdArgs a = initRootNodeProlog(ProdRootOp.TYPE_PARAM_PRD);
+		setRightLeaf(a, variantTypeParam());
 
 		while (token.kind == T_COMMA) {
-			next();
-			a.lastOpN = insertOpNode(a.lastOpN, prevToken);
-			a.prevNKind = fTreeNKind.N_ID_OPERATOR;
-			a.lastOpN.setRight(variantTypeParam());
+			insertCommaOp(a, next());
+			setRightLeaf(a, variantTypeParam());
 		}
-		return new ProdRootLeafN(null, a.lastOpN);
+		return prodRootLeafN(a);
 	}
 
 	ProdRootLeafN variantTypeParam() {
-		ProdArgs a = new ProdArgs();
-		a.lastOpN = new RootOpN(ProdRootOp.TYPE_PARAM_PRD);
-		a.prevNKind = fTreeNKind.N_ROOT;
-
+		ProdArgs a = initRootNodeProlog(ProdRootOp.TYPE_PARAM_PRD);
 		VariantTypeParamLeafNode leafNode = new VariantTypeParamLeafNode(a.lastOpN, token);
-		a.lastOpN.setRight(leafNode);
+		setRightLeaf(a, leafNode);
 
 		if (token.kind == T_ID) {
 			switch (token.opChar()) {
@@ -711,16 +699,13 @@ public class fParser {
 			}
 		}
 		leafNode.val().typeParamLeafN = typeParam();
-		return new ProdRootLeafN(null, a.lastOpN);
+		return prodRootLeafN(a);
 	}
 
 	ProdRootLeafN typeParam() {
-		ProdArgs a = new ProdArgs();
-		a.lastOpN = new RootOpN(ProdRootOp.TYPE_PARAM_PRD);
-		a.prevNKind = fTreeNKind.N_ROOT;
-
+		ProdArgs a = initRootNodeProlog(ProdRootOp.TYPE_PARAM_PRD);
 		TypeParamLeafNode leafNode = new TypeParamLeafNode(a.lastOpN, token);
-		a.lastOpN.setRight(leafNode);
+		setRightLeaf(a, leafNode);
 
 		accept(T_ID);
 		leafNode.val().typeParamName = prevToken.name();
@@ -745,59 +730,53 @@ public class fParser {
 			next();
 			leafNode.val().endTypeLeafNs.add(typeProd());
 		}
-		return new ProdRootLeafN(null, a.lastOpN);
+		return prodRootLeafN(a);
 	}
 
 	ProdRootLeafN params() {
-		ProdArgs a = new ProdArgs();
-		a.lastOpN = new RootOpN(ProdRootOp.PARAM_PRD);
-		a.prevNKind = fTreeNKind.N_ROOT;
+		ProdArgs a = initRootNodeProlog(ProdRootOp.PARAM_PRD);
 		param(a);
 		while (token.kind == T_COMMA) {
 			next();
-			a.lastOpN = insertOpNode(a.lastOpN, prevToken);
+			insertCommaOp(a, prevToken);
 			param(a);
 		}
-		return new ProdRootLeafN(null, a.lastOpN);
+		return prodRootLeafN(a);
 	}
 
 	ProdRootLeafN classParams() {
-		ProdArgs a = new ProdArgs();
-		a.lastOpN = new RootOpN(ProdRootOp.CLASS_PARAMS_PRD);
-		a.prevNKind = fTreeNKind.N_ROOT;
+		ProdArgs a = initRootNodeProlog(ProdRootOp.CLASS_PARAMS_PRD);
 		classParam(a);
 		while (token.kind == T_COMMA) {
 			next();
-			a.lastOpN = insertOpNode(a.lastOpN, prevToken);
+			insertCommaOp(a, prevToken);
 			classParam(a);
 		}
-		return new ProdRootLeafN(null, a.lastOpN);
+		return prodRootLeafN(a);
 	}
 
 
 	void param(ProdArgs a) {
-		assert a.lastOpN.right() == null;
-		ParamLeafNode paramLeafNode = new ParamLeafNode(a.lastOpN, token);
-		a.lastOpN.setRight(paramLeafNode);
 
+		ParamLeafNode leafNode = new ParamLeafNode(a.lastOpN, token);
+		setRightLeaf(a, leafNode);
 		accept(T_ID);
-		paramLeafNode.val().paramName = prevToken.name();
+		leafNode.val().paramName = prevToken.name();
 		if (isColonOpT(0)) {
 			next();
-			paramLeafNode.val().paramTypeLeafN = typeProd();
+			leafNode.val().paramTypeLeafN = typeProd();
 		}
 		if (isAssignOpT(0)) {
 			next();
-			paramLeafNode.val().exprLeafN = expressionProd();
+			leafNode.val().exprLeafN = expressionProd();
 		}
 	}
 
 	void classParam(ProdArgs a) {
-		assert a.lastOpN.right() == null;
+
 		ClassParamLeafNode leafNode = new ClassParamLeafNode(a.lastOpN, token);
-		a.lastOpN.setRight(leafNode);
-		a.prevNKind = fTreeNKind.N_ID_LEAF;
-		//Modifiers
+		setRightLeaf(a, leafNode);
+		//add Modifiers
 		switch (token.kind) {
 			case T_VAL:
 				leafNode.val().lifeScope = Lang.LifeScope.VAL;
@@ -827,10 +806,7 @@ public class fParser {
 	}
 
 	ProdRootLeafN funSig() {
-		ProdArgs a = new ProdArgs();
-		a.lastOpN = new RootOpN(ProdRootOp.FUN_SIG_PRD);
-		a.prevNKind = fTreeNKind.N_ROOT;
-
+		ProdArgs a = initRootNodeProlog(ProdRootOp.FUN_SIG_PRD);
 		accept(T_ID);
 		FunSigLeafNode leafNode = new FunSigLeafNode(a.lastOpN, prevToken);
 		a.lastOpN.setRight(leafNode);
@@ -841,15 +817,12 @@ public class fParser {
 			accept(T_RBRACKET);
 		}
 		leafNode.val().paramsLeafN = paramClauses();
-		return new ProdRootLeafN(null, a.lastOpN);
+		return prodRootLeafN(a);
 	}
 
 	void funDef(ProdArgs a) {
-		accept(T_DEF);
-		FunDclLeafNode leafNode = new FunDclLeafNode(a.lastOpN, prevToken);
-		assert a.lastOpN.right() == null;
-		a.lastOpN.setRight(leafNode);
-		a.prevNKind = fTreeNKind.N_ID_LEAF;
+		FunDclLeafNode leafNode = new FunDclLeafNode(a.lastOpN, token);
+		setRightLeafProlog(a, T_DEF, leafNode);
 
 		switch (token.kind){
 			case T_ID:
@@ -875,12 +848,12 @@ public class fParser {
 		}
 	}
 
-	void typeDef(ProdArgs a) {
+	private void typeDef(ProdArgs a) {
 		TypeDefLeafNode leafNode = new TypeDefLeafNode(a.lastOpN, token);
 		setRightLeafProlog(a, T_TYPE, leafNode);
 	}
 
-	void traitDef(ProdArgs a) {
+	private void traitDef(ProdArgs a) {
 		TraitDefLeafNode leafNode = new TraitDefLeafNode(a.lastOpN, token);
 		setRightLeafProlog(a, T_TRAIT, leafNode);
 		accept(T_ID);
@@ -904,20 +877,43 @@ public class fParser {
 		}
 	}
 
-	ProdRootLeafN templateBody(){
+	private ProdRootLeafN templateBody(){
 		ProdArgs a = initRootNodeProlog(ProdRootOp.TEMPLATE_BODY_PRD);
-		a.lastOpN.setRight(templateStat());
+		setRightLeaf(a, templateStat());
 		while (token.kind == T_SEMI){
-			next();
-			insertSemiOp(a, prevToken);
-			a.lastOpN.setRight(templateStat());
+			insertSemiOp(a, next());
+			setRightLeaf(a, templateStat());
 		}
 		return prodRootLeafN(a);
 	}
 
-	ProdRootLeafN templateStat(){
+	private void def(ProdArgs a){
+		switch (token.kind){
+			case T_VAL:
+				varDef(a);
+				break;
+			case T_VAR:
+				varDef(a);
+				break;
+			case T_DEF:
+				funDef(a);
+				break;
+			case T_TYPE:
+				typeDef(a);
+				break;
+			case T_TRAIT:
+				traitDef(a);
+				break;
+			default:
+				throw new RuntimeException("Unexpected token: " + token.kind);
+		}
+	}
+
+	private ProdRootLeafN templateStat(){
 		ProdArgs a = initRootNodeProlog(ProdRootOp.TEMPLATE_STAT_PRD);
-//		TemplateStatLeafNode leafNode = new TemplateStatLeafNode(null, token);
+//		TemplateStatLeafNode leafNode = new TemplateStatLeafNode(a.lastOpN, token);
+//		setRightLeaf(a, leafNode);
+
 		switch (token.kind){
 			case T_IMPORT:
 				importDef(a);
@@ -929,7 +925,7 @@ public class fParser {
 			default:
 				expressionProd();
 		}
-		return new ProdRootLeafN(null, a.lastOpN);
+		return prodRootLeafN(a);
 	}
 
 
@@ -1338,6 +1334,15 @@ public class fParser {
 
 	private void insertSemiOp(ProdArgs a, fToken t) {
 		assert t.kind ==  T_SEMI;
+		_insertOpNode(a, t);
+	}
+
+	private void insertCommaOp(ProdArgs a, fToken t) {
+		assert t.kind ==  T_COMMA;
+		_insertOpNode(a, t);
+	}
+
+	private void _insertOpNode(ProdArgs a, fToken t) {
 		a.lastOpN = insertOpNode(a.lastOpN, t);
 		a.prevNKind = fTreeNKind.N_ID_OPERATOR;
 	}
