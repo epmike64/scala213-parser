@@ -1,5 +1,6 @@
 package com.flint.compiler;
 
+import com.flint.compiler.lang.Lang;
 import com.flint.compiler.parse.ProdArgs;
 import com.flint.compiler.token.OpChar;
 import com.flint.compiler.token.fOperatorKind;
@@ -413,7 +414,7 @@ public class fParser {
 				TypeLeafNode typeWithTypeArgs = new TypeLeafNode(a.lastOpN, (NamedToken) prevToken);
 				a.lastOpN.setRight(typeWithTypeArgs);
 				accept(T_LBRACKET);
-				typeWithTypeArgs.val().typeArgs = types(null);
+				typeWithTypeArgs.val().typeArgsLeafN = types(null);
 				accept(T_RBRACKET);
 				a.prevNKind = fTreeNKind.N_TYPE_LEAF;
 				expectOneOf(0, T_ID, T_COMMA, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL); //RPAREN: func()()
@@ -467,7 +468,7 @@ public class fParser {
 				FunCallLeafNode funCallLeaf = new FunCallLeafNode(a.lastOpN, (NamedToken) prevToken);
 				a.lastOpN.setRight(funCallLeaf);
 				accept(T_LPAREN);
-				funCallLeaf.val().funcArgs = exprs(null);
+				funCallLeaf.val().funcArgsLeafN = exprs(null);
 				accept(T_RPAREN);
 				a.prevNKind = fTreeNKind.N_FUN_CALL_LEAF;
 				expectOneOf(0, T_ID, T_COMMA, T_FAT_ARROW, T_SEMI, T_NL); //RPAREN: func()()
@@ -633,22 +634,26 @@ public class fParser {
 
 	void patDef(ProdArgs a) {
 		accept(T_VAL);
-		PatDefLeafNode patDefLeafNode = new PatDefLeafNode(a.lastOpN, token);
-		patDefLeafNode.val().pattern2sLeafN = pattern2s();
+		PatDefLeafNode leafNode = new PatDefLeafNode(a.lastOpN, prevToken);
+		assert a.lastOpN.right() == null;
+		a.lastOpN.setRight(leafNode);
+		a.prevNKind = fTreeNKind.N_ID_LEAF;
+
+		leafNode.val().pattern2sLeafN = pattern2s();
 		if (isColonOpT(0)) {
 			next();
-			patDefLeafNode.val().typeLeafN = typeProd();
+			leafNode.val().typeLeafN = typeProd();
 		}
 		acceptOpChar(OpChar.ASSIGN);
-		patDefLeafNode.val().exprLeafN = expressionProd();
+		leafNode.val().exprLeafN = expressionProd();
 		switch (getPrevNKind(a, fTreeNKind.N_ID_LEAF)) {
 			case N_ROOT: {
 				// ROOT="val x"
-				prodFirstCommonLeaf(a, patDefLeafNode, false, 0, T_ID, T_SEMI, T_NL);
+				prodFirstCommonLeaf(a, leafNode, false, 0, T_ID, T_SEMI, T_NL);
 				break;
 			}
 			case N_ID_OPERATOR: {
-				prodRightCommonLeaf(a, patDefLeafNode, false, 0, T_ID, T_SEMI, T_NL);
+				prodRightCommonLeaf(a, leafNode, false, 0, T_ID, T_SEMI, T_NL);
 				break;
 			}
 			default:
@@ -758,6 +763,20 @@ public class fParser {
 		return new ProdRootLeafN(null, a.lastOpN);
 	}
 
+	ProdRootLeafN classParams() {
+		ProdArgs a = new ProdArgs();
+		a.lastOpN = new RootOpN(ProdRootOp.CLASS_PARAMS_PRD);
+		a.prevNKind = fTreeNKind.N_ROOT;
+		classParam(a);
+		while (token.kind == T_COMMA) {
+			next();
+			a.lastOpN = insertOpNode(a.lastOpN, prevToken);
+			classParam(a);
+		}
+		return new ProdRootLeafN(null, a.lastOpN);
+	}
+
+
 	void param(ProdArgs a) {
 		assert a.lastOpN.right() == null;
 		ParamLeafNode paramLeafNode = new ParamLeafNode(a.lastOpN, token);
@@ -775,6 +794,33 @@ public class fParser {
 		}
 	}
 
+	void classParam(ProdArgs a) {
+		assert a.lastOpN.right() == null;
+		ClassParamLeafNode leafNode = new ClassParamLeafNode(a.lastOpN, token);
+		a.lastOpN.setRight(leafNode);
+		a.prevNKind = fTreeNKind.N_ID_LEAF;
+		//Modifiers
+		switch (token.kind) {
+			case T_VAL:
+				leafNode.val().lifeScope = Lang.LifeScope.VAL;
+				next();
+			case T_VAR:
+				leafNode.val().lifeScope = Lang.LifeScope.VAR;
+				next();
+				break;
+			default:
+				break;
+		}
+		accept(T_ID);
+		leafNode.val().paramName = prevToken.name();
+		acceptOpChar(OpChar.COLON);
+		leafNode.val().paramTypeLeafN = typeProd();
+		if(isAssignOpT(0)){
+			next();
+			leafNode.val().exprLeafN = expressionProd();
+		}
+	}
+
 	ProdRootLeafN paramClauses() {
 		accept(T_LPAREN);
 		ProdRootLeafN paramsLeafN = params();
@@ -782,39 +828,129 @@ public class fParser {
 		return paramsLeafN;
 	}
 
-	void funSig(ProdArgs a) {
+	ProdRootLeafN funSig() {
+		ProdArgs a = new ProdArgs();
+		a.lastOpN = new RootOpN(ProdRootOp.FUN_SIG_PRD);
+		a.prevNKind = fTreeNKind.N_ROOT;
+
 		accept(T_ID);
-		FunSigLeafNode funSigLeafNode = new FunSigLeafNode(a.lastOpN, prevToken);
-		funSigLeafNode.val().funName = prevToken.name();
+		FunSigLeafNode leafNode = new FunSigLeafNode(a.lastOpN, prevToken);
+		a.lastOpN.setRight(leafNode);
+		leafNode.val().funName = prevToken.name();
 		if (token.kind == T_LBRACKET) {
 			accept(T_LBRACKET);
-			funSigLeafNode.val().typeParamsLeafN = typeParams();
+			leafNode.val().typeParamsLeafN = typeParams();
 			accept(T_RBRACKET);
 		}
-		funSigLeafNode.val().paramsLeafN = paramClauses();
+		leafNode.val().paramsLeafN = paramClauses();
+		return new ProdRootLeafN(null, a.lastOpN);
 	}
 
 	void funDef(ProdArgs a) {
 		accept(T_DEF);
-		funSig(a);
-		FunDclLeafNode funDclLeafNode = new FunDclLeafNode(a.lastOpN, token);
-		//this
+		FunDclLeafNode leafNode = new FunDclLeafNode(a.lastOpN, prevToken);
+		assert a.lastOpN.right() == null;
+		a.lastOpN.setRight(leafNode);
+		a.prevNKind = fTreeNKind.N_ID_LEAF;
+
+		switch (token.kind){
+			case T_ID:
+				leafNode.val().funSigLeafN = funSig();
+				if(isAssignOpT(0)){
+					next();
+					leafNode.val().funSigTypeLeafN = typeProd();
+					acceptOpChar(OpChar.ASSIGN);
+					leafNode.val().funSigExprLeafN =expressionProd();
+				} else {
+					accept(T_LBRACKET);
+					leafNode.val().funSigBlockLeafN = blockProd();
+					accept(T_RBRACKET);
+				}
+				break;
+			case T_THIS:
+				accept(T_LPAREN);
+				leafNode.val().thisParamsLeafN = params();
+				accept(T_RPAREN);
+				break;
+			default:
+				throw new RuntimeException("Unexpected token: " + token.kind);
+		}
 	}
 
 	void typeDef(ProdArgs a) {
-		TypeDefLeafNode typeDefLeafNode = new TypeDefLeafNode(a.lastOpN, token);
+		accept(T_TYPE);
+		TypeDefLeafNode leafNode = new TypeDefLeafNode(a.lastOpN, prevToken);
+		assert a.lastOpN.right() == null;
+		a.lastOpN.setRight(leafNode);
+		a.prevNKind = fTreeNKind.N_ID_LEAF;
 	}
 
 	void traitDef(ProdArgs a) {
-		TraitDefLeafNode traitDefLeafNode = new TraitDefLeafNode(a.lastOpN, token);
+		accept(T_TRAIT);
+		TraitDefLeafNode leafNode = new TraitDefLeafNode(a.lastOpN, prevToken);
+		assert a.lastOpN.right() == null;
+		a.lastOpN.setRight(leafNode);
+		a.prevNKind = fTreeNKind.N_ID_LEAF;
 	}
 
+	ProdRootLeafN templateBody(){
+		ProdArgs a = new ProdArgs();
+		a.lastOpN = new RootOpN(ProdRootOp.TEMPLATE_BODY_PRD);
+		a.prevNKind = fTreeNKind.N_ROOT;
+		assert a.lastOpN.right() == null;
+		a.lastOpN.setRight(templateStat());
+		while (token.kind == T_SEMI){
+			next();
+			a.lastOpN = insertOpNode(a.lastOpN, prevToken);
+			a.prevNKind = fTreeNKind.N_ID_OPERATOR;
+			a.lastOpN.setRight(templateStat());
+		}
+		return new ProdRootLeafN(null, a.lastOpN);
+	}
+
+	ProdRootLeafN templateStat(){
+		TemplateStatLeafNode leafNode = new TemplateStatLeafNode(null, token);
+		switch (token.kind){
+			case T_IMPORT:
+				break;
+			case T_VAL: case T_VAR: case T_DEF: case T_TYPE: {
+				// Def(a) or Dcl(a)
+				break;
+			}
+			default:
+				expressionProd();
+		}
+		return new ProdRootLeafN(null, leafNode);
+	}
+
+
 	void classDef(ProdArgs a, boolean isCase) {
-		ClassDefLeafNode classDefLeafNode = new ClassDefLeafNode(a.lastOpN, token);
+		accept(T_CLASS);
+		ClassDefLeafNode leafNode = new ClassDefLeafNode(a.lastOpN, prevToken);
+		assert a.lastOpN.right() == null;
+		a.lastOpN.setRight(leafNode);
+		a.prevNKind = fTreeNKind.N_ID_LEAF;
+
+		accept(T_ID);
+		leafNode.val().className = prevToken.name();
+		leafNode.val().isCase = isCase;
+		leafNode.val().typeParamsLeafN = variantTypeParams();
+		leafNode.val().classParamsLeafN = classParams();
+		if(token.kind == T_EXTENDS){
+			next();
+			if(token.kind == T_LBRACKET){
+				next();
+				leafNode.val().templateBodyLeafN = templateBody();
+			}
+		}
 	}
 
 	void objectDef(ProdArgs a, boolean isCase) {
-		ObjectDefLeafNode objectDefLeafNode = new ObjectDefLeafNode(a.lastOpN, token);
+		accept(T_OBJECT);
+		ObjectDefLeafNode leafNode = new ObjectDefLeafNode(a.lastOpN, prevToken);
+		assert a.lastOpN.right() == null;
+		a.lastOpN.setRight(leafNode);
+		a.prevNKind = fTreeNKind.N_ID_LEAF;
 	}
 
 	void blockStatProdLoop(ProdArgs a) {

@@ -11,7 +11,7 @@ public class TypeLeafNode extends CommonLeafNode {
 	 }
 
 	 public ProdRootLeafN typeArgs() {
-		  return val().typeArgs;
+		  return val().typeArgsLeafN;
 	 }
 
 	public String typeName() {

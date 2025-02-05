@@ -4,8 +4,6 @@ import com.flint.compiler.token.type.NamedToken;
 import com.flint.compiler.tree.fTree;
 import com.flint.compiler.tree.leaves.values.FunCallLeafValue;
 
-import java.util.List;
-
 /**
  * Function call
  */
@@ -16,7 +14,7 @@ public class FunCallLeafNode extends CommonLeafNode {
 	}
 
 	public ProdRootLeafN funcArgs() {
-		return val().funcArgs;
+		return val().funcArgsLeafN;
 	}
 
 	@Override
