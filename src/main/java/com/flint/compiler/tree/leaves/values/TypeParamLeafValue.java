@@ -7,7 +7,7 @@ import java.util.List;
 
 public class TypeParamLeafValue extends TokenLeafValue{
 	public String typeParamName;
-	public ProdRootLeafN typeParamClauseLeafN;
+	public ProdRootLeafN variantTypeParamsLeafN;
 	public ProdRootLeafN lowerBoundLeafN;
 	public ProdRootLeafN upperBoundLeafN;
 	public ProdRootLeafN lessPercentBoundLeafN;
