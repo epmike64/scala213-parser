@@ -12,8 +12,6 @@ import com.flint.compiler.tree.fTree.*;
 import com.flint.compiler.tree.leaves.nodes.*;
 import com.flint.compiler.tree.operators.nodes.*;
 import com.flint.compiler.tree.operators.values.OperatorValue;
-
-
 import static com.flint.compiler.token.fTokenKind.*;
 
 public class fParser {
@@ -878,11 +876,8 @@ public class fParser {
 	}
 
 	void typeDef(ProdArgs a) {
-		accept(T_TYPE);
-		TypeDefLeafNode leafNode = new TypeDefLeafNode(a.lastOpN, prevToken);
-		assert a.lastOpN.right() == null;
-		a.lastOpN.setRight(leafNode);
-		a.prevNKind = fTreeNKind.N_ID_LEAF;
+		TypeDefLeafNode leafNode = new TypeDefLeafNode(a.lastOpN, token);
+		setRightLeafProlog(a, T_TYPE, leafNode);
 	}
 
 	void traitDef(ProdArgs a) {
@@ -910,24 +905,22 @@ public class fParser {
 	}
 
 	ProdRootLeafN templateBody(){
-		ProdArgs a = new ProdArgs();
-		a.lastOpN = new RootOpN(ProdRootOp.TEMPLATE_BODY_PRD);
-		a.prevNKind = fTreeNKind.N_ROOT;
-		assert a.lastOpN.right() == null;
+		ProdArgs a = initRootNodeProlog(ProdRootOp.TEMPLATE_BODY_PRD);
 		a.lastOpN.setRight(templateStat());
 		while (token.kind == T_SEMI){
 			next();
-			a.lastOpN = insertOpNode(a.lastOpN, prevToken);
-			a.prevNKind = fTreeNKind.N_ID_OPERATOR;
+			insertSemiOp(a, prevToken);
 			a.lastOpN.setRight(templateStat());
 		}
-		return new ProdRootLeafN(null, a.lastOpN);
+		return prodRootLeafN(a);
 	}
 
 	ProdRootLeafN templateStat(){
-		TemplateStatLeafNode leafNode = new TemplateStatLeafNode(null, token);
+		ProdArgs a = initRootNodeProlog(ProdRootOp.TEMPLATE_STAT_PRD);
+//		TemplateStatLeafNode leafNode = new TemplateStatLeafNode(null, token);
 		switch (token.kind){
 			case T_IMPORT:
+				importDef(a);
 				break;
 			case T_VAL: case T_VAR: case T_DEF: case T_TYPE: {
 				// Def(a) or Dcl(a)
@@ -936,7 +929,7 @@ public class fParser {
 			default:
 				expressionProd();
 		}
-		return new ProdRootLeafN(null, leafNode);
+		return new ProdRootLeafN(null, a.lastOpN);
 	}
 
 
@@ -1275,8 +1268,7 @@ public class fParser {
 		while (a.lastOpN.parent() != null) {
 			a.lastOpN = a.lastOpN.parent();
 		}
-
-		return new ProdRootLeafN(null, a.lastOpN);
+		return prodRootLeafN(a);
 	}
 
 	CommonOpNode insertOpNode(CommonOpNode lastOpN, fToken op_token) {
@@ -1335,9 +1327,19 @@ public class fParser {
 
 	private void setRightLeafProlog(ProdArgs a, fTokenKind accKind, CommonLeafNode leafNode) {
 		accept(accKind);
+		setRightLeaf(a, leafNode);
+	}
+
+	private void setRightLeaf(ProdArgs a, CommonLeafNode leafNode) {
 		assert a.lastOpN.right() == null;
 		a.lastOpN.setRight(leafNode);
 		a.prevNKind = fTreeNKind.N_ID_LEAF;
+	}
+
+	private void insertSemiOp(ProdArgs a, fToken t) {
+		assert t.kind ==  T_SEMI;
+		a.lastOpN = insertOpNode(a.lastOpN, t);
+		a.prevNKind = fTreeNKind.N_ID_OPERATOR;
 	}
 
 	private void insertSemiOp(ProdArgs a) {
@@ -1350,6 +1352,10 @@ public class fParser {
 		a.lastOpN = new RootOpN(prodRootOp);
 		a.prevNKind = fTreeNKind.N_ROOT;
 		return a;
+	}
+
+	private ProdRootLeafN prodRootLeafN(ProdArgs a){
+		return new ProdRootLeafN(null, a.lastOpN);
 	}
 
 	public CommonOpNode compilationUnit() {
