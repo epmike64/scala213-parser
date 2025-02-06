@@ -1,14 +1,15 @@
 package com.flint.compiler.dot;
 import com.flint.compiler.dot.BinaryTreeMaker.Node;
+import com.flint.compiler.tree.leaves.nodes.ProdRootLeafN;
 import com.flint.compiler.tree.operators.nodes.CommonOpNode;
 
 import java.io.FileWriter;
 
 public class DotScriptWriter {
 
-	public String generateDotFile(String filename, CommonOpNode root, String fileContent) {
+	public String generateDotFile(String filename, ProdRootLeafN root, String fileContent) {
 		BinaryTreeMaker treeMaker= new  BinaryTreeMaker();
-		String dotScript = createDotScript(treeMaker.createBinaryTree(root), fileContent);
+		String dotScript = createDotScript(treeMaker.createBinaryTree(root.opNode()), fileContent);
 		//write to file
 		try (FileWriter writer = new FileWriter(filename)) {
 			writer.write(dotScript);

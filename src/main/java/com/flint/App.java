@@ -5,6 +5,7 @@ import com.flint.compiler.fParser;
 import com.flint.compiler.fReader;
 import com.flint.compiler.fScanner;
 import com.flint.compiler.fTokenizer;
+import com.flint.compiler.tree.leaves.nodes.ProdRootLeafN;
 import com.flint.compiler.tree.operators.nodes.CommonOpNode;
 
 import java.io.IOException;
@@ -39,7 +40,7 @@ public class App
         fTokenizer tknz = getTokenizer();
         fScanner scanner = new fScanner(tknz);
         fParser parser = new fParser(scanner);
-        CommonOpNode n = parser.compilationUnit();
+        ProdRootLeafN n = parser.compilationUnit();
         System.out.println("> Done parsing !");
         //parser.printTreePostOrder(n, 1);
         DotScriptWriter dsw = new DotScriptWriter();

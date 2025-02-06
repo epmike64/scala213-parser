@@ -1378,7 +1378,7 @@ public class fParser {
 		return new ProdRootLeafN(null, a.lastOpN);
 	}
 
-	public CommonOpNode compilationUnit() {
+	public ProdRootLeafN compilationUnit() {
 		ProdArgs a = initRootNodeProlog(ProdRootOp.COMP_UNIT_PRD);
 
 		while (token.kind != T_EOF) {
@@ -1396,7 +1396,6 @@ public class fParser {
 			}
 			insertSemiOp(a);
 		}
-		return a.lastOpN;
+		return prodRootLeafN(a);
 	}
-
 }
