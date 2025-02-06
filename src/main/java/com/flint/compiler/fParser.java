@@ -890,7 +890,11 @@ public class fParser {
 		accept(T_ID);
 		leafNode.val().className = prevToken.name();
 		leafNode.val().isCase = isCase;
-		leafNode.val().typeParamsLeafN = variantTypeParams();
+		if(token.kind == T_LBRACKET) {
+			next();
+			leafNode.val().typeParamsLeafN = variantTypeParams();
+			accept(T_RBRACKET);
+		}
 		leafNode.val().classParamsLeafN = classParams();
 		if(token.kind == T_EXTENDS){
 			next();
@@ -1318,13 +1322,20 @@ public class fParser {
 		if(token.kind == T_CASE){
 			isCase = true;
 			next();
+			expectOneOf(0, T_CLASS, T_OBJECT);
 		}
-		if(token.kind == T_CLASS){
-			classDef(a, isCase);
-		} else if(token.kind == T_OBJECT){
-			objectDef(a, isCase);
-		} else {
-			throw new RuntimeException("Unexpected token: " + token.kind);
+		switch (token.kind){
+			case T_TRAIT:
+				traitDef(a);
+				break;
+			case T_CLASS:
+				classDef(a, isCase);
+				break;
+			case T_OBJECT:
+				objectDef(a, isCase);
+				break;
+			default:
+				throw new RuntimeException("Unexpected token: " + token.kind);
 		}
 	}
 
