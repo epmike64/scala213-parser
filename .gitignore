@@ -28,7 +28,7 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
-src/resources/**
+/src/resources/
 
 ### IntelliJ IDEA ###
 /.idea
