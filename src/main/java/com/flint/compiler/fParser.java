@@ -957,11 +957,18 @@ public class fParser {
 
 	void blockStatProdLoop(ProdArgs a) {
 		boolean isCase = false;
-		boolean loop = true;
 
-		while (loop) {
+		loop:
+		while (true) {
 
 			switch (token.kind) {
+				case T_RCURL:
+					break loop;
+
+				case T_IMPORT:
+					importDef(a);
+					break;
+
 				case T_VAL: {
 					patDef(a);
 					break;
@@ -1004,14 +1011,12 @@ public class fParser {
 					break;
 				}
 
-				case T_ID:
 				default:
-					loop = false;
+					setRightLeaf(a, expressionProd());
 					break;
 			}
 			if (!isCase) {
-				a.lastOpN = insertOpNode(a.lastOpN, Semicolon);
-				a.prevNKind = fTreeNKind.N_ID_OPERATOR;
+				insertSemiOp(a);
 			}
 		}
 	}
