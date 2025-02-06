@@ -600,14 +600,6 @@ public class fParser {
 		return templateBody(null, null, null);
 	}
 
-//	private ProdRootLeafN blockStatProd() {
-//		return blockStatProd(null, null, null);
-//	}
-
-//	private ProdRootLeafN blockStatProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
-//		return commonProd(ProdRootOp.BLOCK_STAT_PRD, wrapSubExpr, prevNKind, opToken);
-//	}
-
 	private ProdRootLeafN typeProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
 		return commonProd(ProdRootOp.TYPE_PRD, wrapSubExpr, prevNKind, opToken);
 	}
@@ -891,58 +883,6 @@ public class fParser {
 		}
 	}
 
-//	private ProdRootLeafN templateBody(){
-//		ProdArgs a = initRootNodeProlog(ProdRootOp.TEMPLATE_BODY_PRD);
-//		setRightLeaf(a, templateStat());
-//		while (token.kind == T_SEMI){
-//			insertSemiOp(a, next());
-//			setRightLeaf(a, templateStat());
-//		}
-//		return prodRootLeafN(a);
-//	}
-
-	private void def(ProdArgs a){
-		switch (token.kind){
-			case T_VAL:
-				varDef(a);
-				break;
-			case T_VAR:
-				varDef(a);
-				break;
-			case T_DEF:
-				funDef(a);
-				break;
-			case T_TYPE:
-				typeDef(a);
-				break;
-			case T_TRAIT:
-				traitDef(a);
-				break;
-			default:
-				throw new RuntimeException("Unexpected token: " + token.kind);
-		}
-	}
-
-//	private ProdRootLeafN templateStat(){
-//		ProdArgs a = initRootNodeProlog(ProdRootOp.TEMPLATE_STAT_PRD);
-////		TemplateStatLeafNode leafNode = new TemplateStatLeafNode(a.lastOpN, token);
-////		setRightLeaf(a, leafNode);
-//
-//		switch (token.kind){
-//			case T_IMPORT:
-//				importDef(a);
-//				break;
-//			case T_VAL: case T_VAR: case T_DEF: case T_TYPE: {
-//				// Def(a) or Dcl(a)
-//				break;
-//			}
-//			default:
-//				expressionProd();
-//		}
-//		return prodRootLeafN(a);
-//	}
-
-
 	void classDef(ProdArgs a, boolean isCase) {
 		ClassDefLeafNode leafNode = new ClassDefLeafNode(a.lastOpN, token);
 		setRightLeafProlog(a, T_CLASS, leafNode);
@@ -1007,8 +947,26 @@ public class fParser {
 
 	}
 
+	void valDcl(ProdArgs a) {
+		throw new RuntimeException("Not implemented");
+	}
+
+	void varDcl(ProdArgs a) {
+		throw new RuntimeException("Not implemented");
+	}
+
+	void funDcl(ProdArgs a) {
+		throw new RuntimeException("Not implemented");
+	}
+
+	void typeDcl(ProdArgs a) {
+		throw new RuntimeException("Not implemented");
+	}
+
 	void blockStatProdLoop(ProdArgs a, ProdRootOp prodRootOp) {
 
+		assert prodRootOp == ProdRootOp.BLOCK_PRD || prodRootOp == ProdRootOp.TEMPLATE_BODY_PRD;
+		boolean p = prodRootOp == ProdRootOp.BLOCK_PRD;
 		boolean isCase = false;
 
 		loop:
@@ -1026,21 +984,20 @@ public class fParser {
 					break;
 
 				case T_VAL: {
-					patDef(a);
-					break;
+					if(p) patDef(a); else valDcl(a);
 				}
 				case T_VAR: {
-					varDef(a);
+					if(p) varDef(a); else varDcl(a);
 					break;
 				}
 
 				case T_DEF: {
-					funDef(a);
+					if(p) funDef(a); else funDcl(a);
 					break;
 				}
 
 				case T_TYPE: {
-					typeDef(a);
+					if(p) typeDef(a); else typeDcl(a);
 					break;
 				}
 
@@ -1303,6 +1260,7 @@ public class fParser {
 			case CASE_CLASSES_PRD:
 				caseClassesProdLoop(a);
 				break;
+
 			case BLOCK_PRD:
 				blockStatProdLoop(a, ProdRootOp.BLOCK_PRD);
 				break;
