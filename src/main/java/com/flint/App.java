@@ -6,7 +6,6 @@ import com.flint.compiler.fReader;
 import com.flint.compiler.fScanner;
 import com.flint.compiler.fTokenizer;
 import com.flint.compiler.tree.leaves.nodes.ProdRootLeafN;
-import com.flint.compiler.tree.operators.nodes.CommonOpNode;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,35 +15,32 @@ import java.nio.file.Paths;
  * Hello world!
  *
  */
-public class App 
-{
-    final String parseTest001 = "src/main/resources/ParseTest001.txt";
+public class App {
     public static void main(String[] args) {
         App app = new App();
         try {
-            //app.testTokenizer();
-            app.testParser();
+            app.testParser(args[0]);
             System.out.println("Done");
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private fTokenizer getTokenizer() {
-        char[] cbuf = readFileToCharArray(parseTest001);
+    private fTokenizer getTokenizer(String filename) {
+        char[] cbuf = readFileToCharArray(filename);
         fReader r = new fReader(cbuf, cbuf.length);
         return new fTokenizer(r);
     }
 
-    public void testParser() {
-        fTokenizer tknz = getTokenizer();
+    public void testParser(String filename) {
+        String filePath = "src/main/resources/" + filename;
+        fTokenizer tknz = getTokenizer(filePath);
         fScanner scanner = new fScanner(tknz);
         fParser parser = new fParser(scanner);
         ProdRootLeafN n = parser.compilationUnit();
         System.out.println("> Done parsing !");
-        //parser.printTreePostOrder(n, 1);
         DotScriptWriter dsw = new DotScriptWriter();
-        String dotScript = dsw.generateDotFile("src/main/resources/ParseTest001.dot", n, readFileToString(parseTest001));
+        String dotScript = dsw.generateDotFile(filePath + ".dot", n, readFileToString(filePath));
          System.out.println("dotScript>>>");
          System.out.println(dotScript);
     }
