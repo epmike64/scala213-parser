@@ -147,6 +147,12 @@ public class fParser {
 		return count;
 	}
 
+	void skipSemi() {
+		while (token.kind == fTokenKind.T_SEMI) {
+			next();
+		}
+	}
+
 	int skipRPar() {
 		int count = 0;
 		while (token.kind == fTokenKind.T_RPAREN) {
@@ -590,13 +596,17 @@ public class fParser {
 		return blockProd(null, null, null);
 	}
 
-	private ProdRootLeafN blockStatProd() {
-		return blockStatProd(null, null, null);
+	private ProdRootLeafN templateBodyProd() {
+		return templateBody(null, null, null);
 	}
 
-	private ProdRootLeafN blockStatProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
-		return commonProd(ProdRootOp.BLOCK_STAT_PRD, wrapSubExpr, prevNKind, opToken);
-	}
+//	private ProdRootLeafN blockStatProd() {
+//		return blockStatProd(null, null, null);
+//	}
+
+//	private ProdRootLeafN blockStatProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+//		return commonProd(ProdRootOp.BLOCK_STAT_PRD, wrapSubExpr, prevNKind, opToken);
+//	}
 
 	private ProdRootLeafN typeProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
 		return commonProd(ProdRootOp.TYPE_PRD, wrapSubExpr, prevNKind, opToken);
@@ -616,6 +626,10 @@ public class fParser {
 
 	private ProdRootLeafN blockProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
 		return commonProd(ProdRootOp.BLOCK_PRD, wrapSubExpr, prevNKind, opToken);
+	}
+
+	private ProdRootLeafN templateBody(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+		return commonProd(ProdRootOp.TEMPLATE_BODY_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
 	private ProdRootLeafN pattern1Prod() {
@@ -872,20 +886,20 @@ public class fParser {
 		}
 		if(token.kind == T_LCURL) {
 			next();
-			leafNode.val().templateBodyLeafN = templateBody();
+			leafNode.val().templateBodyLeafN = templateBodyProd();
 			accept(T_RCURL);
 		}
 	}
 
-	private ProdRootLeafN templateBody(){
-		ProdArgs a = initRootNodeProlog(ProdRootOp.TEMPLATE_BODY_PRD);
-		setRightLeaf(a, templateStat());
-		while (token.kind == T_SEMI){
-			insertSemiOp(a, next());
-			setRightLeaf(a, templateStat());
-		}
-		return prodRootLeafN(a);
-	}
+//	private ProdRootLeafN templateBody(){
+//		ProdArgs a = initRootNodeProlog(ProdRootOp.TEMPLATE_BODY_PRD);
+//		setRightLeaf(a, templateStat());
+//		while (token.kind == T_SEMI){
+//			insertSemiOp(a, next());
+//			setRightLeaf(a, templateStat());
+//		}
+//		return prodRootLeafN(a);
+//	}
 
 	private void def(ProdArgs a){
 		switch (token.kind){
@@ -909,24 +923,24 @@ public class fParser {
 		}
 	}
 
-	private ProdRootLeafN templateStat(){
-		ProdArgs a = initRootNodeProlog(ProdRootOp.TEMPLATE_STAT_PRD);
-//		TemplateStatLeafNode leafNode = new TemplateStatLeafNode(a.lastOpN, token);
-//		setRightLeaf(a, leafNode);
-
-		switch (token.kind){
-			case T_IMPORT:
-				importDef(a);
-				break;
-			case T_VAL: case T_VAR: case T_DEF: case T_TYPE: {
-				// Def(a) or Dcl(a)
-				break;
-			}
-			default:
-				expressionProd();
-		}
-		return prodRootLeafN(a);
-	}
+//	private ProdRootLeafN templateStat(){
+//		ProdArgs a = initRootNodeProlog(ProdRootOp.TEMPLATE_STAT_PRD);
+////		TemplateStatLeafNode leafNode = new TemplateStatLeafNode(a.lastOpN, token);
+////		setRightLeaf(a, leafNode);
+//
+//		switch (token.kind){
+//			case T_IMPORT:
+//				importDef(a);
+//				break;
+//			case T_VAL: case T_VAR: case T_DEF: case T_TYPE: {
+//				// Def(a) or Dcl(a)
+//				break;
+//			}
+//			default:
+//				expressionProd();
+//		}
+//		return prodRootLeafN(a);
+//	}
 
 
 	void classDef(ProdArgs a, boolean isCase) {
@@ -942,7 +956,7 @@ public class fParser {
 			next();
 			if(token.kind == T_LBRACKET){
 				next();
-				leafNode.val().templateBodyLeafN = templateBody();
+				leafNode.val().templateBodyLeafN = templateBodyProd();
 			}
 		}
 	}
@@ -955,13 +969,55 @@ public class fParser {
 		leafNode.val().isCase = isCase;
 	}
 
-	void blockStatProdLoop(ProdArgs a) {
+	private void templateStatLoop(ProdArgs a){
+
+		loop:
+		while (true) {
+			switch (token.kind){
+				case T_IMPORT:
+					importDef(a);
+					break;
+				case T_VAL:
+					varDef(a);
+					break;
+				case T_VAR:
+					varDef(a);
+					break;
+				case T_DEF:
+					funDef(a);
+					break;
+				case T_TYPE:
+					typeDef(a);
+					break;
+				case T_TRAIT:
+					traitDef(a);
+					break;
+				case T_CLASS:
+					classDef(a, false);
+					break;
+				case T_OBJECT:
+					objectDef(a, false);
+					break;
+				default:
+					setRightLeaf(a, expressionProd());
+					break;
+			}
+			insertSemiOp(a);
+		}
+
+	}
+
+	void blockStatProdLoop(ProdArgs a, ProdRootOp prodRootOp) {
+
 		boolean isCase = false;
 
 		loop:
 		while (true) {
-
 			switch (token.kind) {
+				case T_SEMI:
+					skipSemi();
+					continue loop;
+
 				case T_RCURL:
 					break loop;
 
@@ -1019,11 +1075,6 @@ public class fParser {
 				insertSemiOp(a);
 			}
 		}
-	}
-
-
-	void blockProdLoop(ProdArgs a) {
-		throw new RuntimeException("Not implemented");
 	}
 
 	void blockExprProdLoop(ProdArgs a) {
@@ -1253,10 +1304,11 @@ public class fParser {
 				caseClassesProdLoop(a);
 				break;
 			case BLOCK_PRD:
-				blockProdLoop(a);
+				blockStatProdLoop(a, ProdRootOp.BLOCK_PRD);
 				break;
-			case BLOCK_STAT_PRD:
-				blockStatProdLoop(a);
+
+			case TEMPLATE_BODY_PRD:
+				blockStatProdLoop(a, ProdRootOp.TEMPLATE_BODY_PRD);
 				break;
 
 			case PATTERN1_PRD:
