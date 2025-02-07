@@ -7,6 +7,7 @@ public class ClassDefLeafValue extends TokenLeafValue {
 	public String className;
 	public boolean isCase;
 	public ProdRootLeafN typeParamsLeafN;
+	public ProdRootLeafN accessModifierLeafN;
 	public ProdRootLeafN classParamsLeafN;
 	public ProdRootLeafN extendsLeafN;
 	public ProdRootLeafN templateBodyLeafN;

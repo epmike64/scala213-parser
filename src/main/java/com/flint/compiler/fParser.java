@@ -911,6 +911,7 @@ public class fParser {
 			leafNode.val().typeParamsLeafN = variantTypeParams();
 			accept(T_RBRACKET);
 		}
+		leafNode.val().accessModifierLeafN = accessModifier();
 		leafNode.val().classParamsLeafN = classParams();
 		if(token.kind == T_EXTENDS){
 			next();
