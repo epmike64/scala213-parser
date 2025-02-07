@@ -5,6 +5,10 @@ import static com.flint.compiler.token.fModifier.fModifierKindTyp.*;
 
 public class fModifier {
 
+	public enum fAccessQualifier {
+		ID, THIS
+	}
+
 	public enum fModifierKindTyp {
 		DEFAULT, LOCAL, ACCESS
 	}

@@ -879,18 +879,23 @@ public class fParser {
 		}
 	}
 
-	void accessModifier() {
-		ProdArgs a = initRootNodeProlog(ProdRootOp.ACCESS_MODIFIER_PRD);
-		ModifierLeafNode leafNode = new ModifierLeafNode(a.lastOpN, token);
+	ProdRootLeafN accessModifier() {
 		switch (token.kind) {
-			case T_PRIVATE:
+			case T_PRIVATE: case T_PROTECTED: {
+				ProdArgs a = initRootNodeProlog(ProdRootOp.ACCESS_MODIFIER_PRD);
+				ModifierLeafNode leafNode = new ModifierLeafNode(a.lastOpN, token);
+				setRightLeaf(a, leafNode);
+				leafNode.val().setModifierKind(fModifierMap.getModifierKind(token.name()));
 				next();
-				break;
-			case T_PROTECTED:
-				next();
-				break;
+				if(token.kind == T_LBRACKET){
+					next();
+					leafNode.val().setAccessQualifier(fModifierMap.getAccessQualifier(token.name()));
+					accept(T_RBRACKET);
+				}
+				return prodRootLeafN(a);
+			}
 			default:
-				throw new RuntimeException("Unexpected token: " + token.kind);
+				return null;
 		}
 	}
 
