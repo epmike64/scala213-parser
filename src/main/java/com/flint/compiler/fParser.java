@@ -1530,21 +1530,35 @@ public class fParser {
 
 	public ProdRootLeafN compilationUnit() {
 		ProdArgs a = initRootNodeProlog(ProdRootOp.COMP_UNIT_PRD);
-
+		boolean firstStat = true;
 		while (token.kind != T_EOF) {
 			switch (token.kind) {
+				case T_SEMI: case T_NL:{
+					next();
+					continue;
+				}
 				case T_CASE:
 				case T_TRAIT:
 				case T_CLASS: {
+					if(!firstStat){
+						insertSemiOp(a);
+					} else {
+						firstStat = false;
+					}
 					tmplDef(a);
 					break;
 				}
 				case T_IMPORT: {
+					if(!firstStat){
+						insertSemiOp(a);
+					}
+					else {
+						firstStat = false;
+					}
 					importDef(a);
 					break;
 				}
 			}
-			insertSemiOp(a);
 		}
 		return prodRootLeafN(a);
 	}

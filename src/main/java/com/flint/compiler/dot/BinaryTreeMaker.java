@@ -57,6 +57,10 @@ public class BinaryTreeMaker {
 				return addFuncCall((FunCallLeafNode)n);
 			case N_TYPE_LEAF:
 				return addTypeLeaf(((TypeLeafNode)n));
+			case N_CLASS_DEF_LEAF:
+				return addClassDef((ClassDefLeafNode)n);
+			case N_CLASS_PARENTS_LEAF:
+				return addClassParents((ClassParentsLeafNode)n);
 			default:
 				throw new UnsupportedOperationException();
 		}
@@ -67,6 +71,20 @@ public class BinaryTreeMaker {
 		Node left = addNode(opNode.left());
 		Node right = addNode(opNode.right());
 		return new Node(label, left, right);
+	}
+
+	Node addClassParents(ClassParentsLeafNode classParentsLeaf) {
+		String label = "Class Parents";
+		ProdRootLeafN constrType = classParentsLeaf.val().constrType;
+		ProdRootLeafN constrArgsExpr = classParentsLeaf.val().constrArgExprs;
+		return new Node(label, null, null);
+	}
+
+	Node addClassDef(ClassDefLeafNode classDefLeaf) {
+		String label = "Class: " + classDefLeaf.val().className + "\nCase: " + classDefLeaf.val().isCase;
+		ProdRootLeafN args = classDefLeaf.val().classParentsLeafN;
+		Node last = addNode(args);
+		return new Node(label, last, null);
 	}
 
 	Node addTypeLeaf(TypeLeafNode typeLeaf) {
