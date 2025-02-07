@@ -1,7 +1,7 @@
 package com.flint.compiler.lang;
 
-public interface Lang {
-	enum LifeScope {
-		DEFAULT, VAL, VAR
+public class Lang {
+	public enum VariableProp {
+		TEMP, VAL, VAR
 	}
 }

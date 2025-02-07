@@ -1,7 +1,9 @@
 package com.flint.compiler.token;
+import java.util.HashMap;
+import java.util.Map;
 
 public class fTokenMap {
-	private static final java.util.Map<String, fTokenKind> map = new java.util.HashMap<>();
+	private static final Map<String, fTokenKind> map = new HashMap<>();
 
 	static {
 		for (fTokenKind token : fTokenKind.values()) {

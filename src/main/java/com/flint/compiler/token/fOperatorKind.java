@@ -15,8 +15,10 @@ public enum fOperatorKind {
 	O_COMMA(",", 2, false),
 	O_LEFT_PAREN("(", 2, false),
 	O_SEMI(";", 1, false),
+	O_ID_SYM_RIGHT_ASSC("@003", 1, true),
+	O_ID_SYM_LEFT_ASSC("@002", 1, false),
 	O_ASSIGN("=", 1, false),
-	O_ROOT("", 0, false),
+	O_ROOT("@001", 0, false),
 
 	O_RIGHT_PAREN(")", -1, false);
 

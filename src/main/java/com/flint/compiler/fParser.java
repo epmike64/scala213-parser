@@ -785,10 +785,10 @@ public class fParser {
 		//add Modifiers
 		switch (token.kind) {
 			case T_VAL:
-				leafNode.val().lifeScope = Lang.LifeScope.VAL;
+				leafNode.val().lifeScope = Lang.VariableProp.VAL;
 				next();
 			case T_VAR:
-				leafNode.val().lifeScope = Lang.LifeScope.VAR;
+				leafNode.val().lifeScope = Lang.VariableProp.VAR;
 				next();
 				break;
 			default:
@@ -880,6 +880,21 @@ public class fParser {
 			next();
 			leafNode.val().templateBodyLeafN = templateBodyProd();
 			accept(T_RCURL);
+		}
+	}
+
+	void accessModifier() {
+		ProdArgs a = initRootNodeProlog(ProdRootOp.ACCESS_MODIFIER_PRD);
+		ModifierLeafNode leafNode = new ModifierLeafNode(a.lastOpN, token);
+		switch (token.kind) {
+			case T_PRIVATE:
+				next();
+				break;
+			case T_PROTECTED:
+				next();
+				break;
+			default:
+				throw new RuntimeException("Unexpected token: " + token.kind);
 		}
 	}
 

@@ -8,7 +8,7 @@ public class ClassParamLeafValue extends TokenLeafValue {
 
 	//Modifiers
 	public String paramName;
-	public Lang.LifeScope lifeScope = Lang.LifeScope.DEFAULT;
+	public Lang.VariableProp lifeScope = Lang.VariableProp.TEMP;
 	public ProdRootLeafN paramTypeLeafN;
 	public ProdRootLeafN exprLeafN;
 

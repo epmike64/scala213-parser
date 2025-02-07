@@ -1,16 +1,9 @@
 package com.flint.compiler.token;
 
+import com.flint.compiler.lang.LangCheck;
 import com.flint.compiler.token.type.fToken;
 
 public class fOperatorMap {
-
-	private static final java.util.Map<String, fOperatorKind> map = new java.util.HashMap<>();
-
-	static {
-		for (fOperatorKind t : fOperatorKind.values()) {
-			map.put(t.opname, t);
-		}
-	}
 
 	public static fOperatorKind getOperatorKind(fToken token) {
 		switch (token.kind) {
@@ -25,10 +18,15 @@ public class fOperatorMap {
 			case T_SEMI:
 				return fOperatorKind.O_SEMI;
 			case T_ID:
-				break;
+				if(LangCheck.isValidScalaMethodName(token.name())) {
+					if(token.name().endsWith(":")) {
+						return fOperatorKind.O_ID_SYM_RIGHT_ASSC;
+					}
+					return fOperatorKind.O_ID_SYM_LEFT_ASSC;
+				}
+				throw new RuntimeException("Invalid Symbolic Method Name: "+token.name());
 			default:
 				throw new AssertionError("Token is not an operator");
 		}
-		return map.getOrDefault(token.name(), null);
 	}
 }
