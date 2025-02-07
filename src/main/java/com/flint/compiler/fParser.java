@@ -1109,9 +1109,10 @@ public class fParser {
 		loop:
 		while (true) {
 			switch (token.kind) {
-				case T_SEMI:
-					skipSemi();
+				case T_NL: case T_SEMI: {
+					next();
 					continue;
+				}
 
 				case T_RCURL:
 					break loop;
