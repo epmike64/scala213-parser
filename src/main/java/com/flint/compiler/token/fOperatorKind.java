@@ -15,15 +15,16 @@ public enum fOperatorKind {
 	O_COMMA(",", 2, false),
 	O_LEFT_PAREN("(", 2, false),
 	O_SEMI(";", 1, false),
-	O_ID_SYM_RIGHT_ASSC("@003", 1, true),
-	O_ID_SYM_LEFT_ASSC("@002", 1, false),
+	O_ID_SMBLC_RIGHT_ASSC("@003", 1, true),
+	O_ID_SMBLC_LEFT_ASSC("@002", 1, false),
 	O_ASSIGN("=", 1, false),
 	O_ROOT("@001", 0, false),
 
 	O_RIGHT_PAREN(")", -1, false);
 
-	fOperatorKind(String name, int precedence, boolean isRightAssociative) {
-		this.opname = name;
+	fOperatorKind(String opname, int precedence, boolean isRightAssociative) {
+		assert opname != null && opname.trim().length() > 0;
+		this.opname = opname;
 		this._prec = precedence;
 		this.isRightAssociative = isRightAssociative;
 	}
