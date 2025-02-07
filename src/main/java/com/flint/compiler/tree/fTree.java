@@ -24,7 +24,6 @@ public interface fTree {
 		N_CASE_KW_LEAF,
 		N_PAT_DEF_LEAF,
 		N_CONSTR_PATTERN_LEAF,
-		N_GUARD_LEAF,
 		N_PROD_ROOT_LEAF,
 		N_ELSE_KW_LEAF,
 		N_ID_LEAF,

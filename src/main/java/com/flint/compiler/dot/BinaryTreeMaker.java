@@ -85,69 +85,67 @@ public class BinaryTreeMaker {
 				return addCaseKw((CaseKwLeafNode)n);
 			case N_CONSTR_PATTERN_LEAF:
 				return addConstrPattern((ConstrPatternLeafNode)n);
-			case N_GUARD_LEAF:
-				return addGuard((GuardLeafNode)n);
 			default:
 				throw new UnsupportedOperationException();
 		}
 	}
 
-	Node addGuard(GuardLeafNode n) {
-		Node left = addNode(n.val().exprLeafN);
-		Node right = addNode(n.val().exprLeafN);
-		return new Node("Guard", left, right);
-	}
 
-	Node addConstrPattern(ConstrPatternLeafNode constrPatternLeafNode) {
-		Node left = addNode(constrPatternLeafNode.val().patternLeafN);
-		Node right = addNode(constrPatternLeafNode.val().exprLeafN);
+	Node addConstrPattern(ConstrPatternLeafNode n) {
+
+		Node left = addNode(n.val().patternLeafN);
+		Node right = null;//addNode(n.val().exprLeafN);
 		return new Node("Constr Pattern", left, right);
 	}
 
 	Node addCaseKw(CaseKwLeafNode caseKwLeafNode) {
 		Node left = addNode(caseKwLeafNode.val().patternLeafN);
-		Node right = addNode(caseKwLeafNode.val().exprLeafN);
+		Node right = null;//addNode(caseKwLeafNode.val().exprLeafN);
 		return new Node("Case", left, right);
 	}
 
 	Node addFunDcl(FunDclLeafNode funDclLeafNode) {
 		Node left = addNode(funDclLeafNode.val().funSigLeafN);
-		Node right = addNode(funDclLeafNode.val().exprLeafN);
+		Node right = null;//addNode(funDclLeafNode.val().exprLeafN);
 		return new Node("FunDcl", left, right);
 	}
 
 	Node addTraitDef(TraitDefLeafNode traitDefLeafNode) {
-		Node left = addNode(traitDefLeafNode.val().typeParamsLeafN);
+		Node left = null;//addNode(traitDefLeafNode.val().typeParamsLeafN);
 		Node right = addNode(traitDefLeafNode.val().templateBodyLeafN);
 		return new Node("TraitDef", left, right);
 	}
 
-	Node addObjectDef(ObjectDefLeafNode objectDefLeafNode) {
-		Node left = addNode(objectDefLeafNode.val().templateBodyLeafN);
-		return new Node("ObjectDef", left, null);
+	Node addObjectDef(ObjectDefLeafNode n) {
+		String label = "ObjectDef: " + n.val().objectName;
+		Node left = null;//addNode(n.val().objectNameLeafN);
+		return new Node(label, left, null);
 	}
 
-	Node addTypeDef(TypeDefLeafNode typeDefLeafNode) {
-		Node left = addNode(typeDefLeafNode.val().typeParamsLeafN);
-		Node right = addNode(typeDefLeafNode.val().typeLeafN);
-		return new Node("TypeDef", left, right);
+	Node addTypeDef(TypeDefLeafNode n) {
+		String label = "TypeDef: " + n.val().typeName;
+		Node left = addNode(n.val().variantTypeParamsLeafN);
+		Node right = addNode(n.val().typeLeafN);
+		return new Node(label, left, right);
 	}
 
 	Node addFunSig(FunSigLeafNode funSigLeafNode) {
+		String label = "FunSig: " + funSigLeafNode.val().funName;
 		Node left = addNode(funSigLeafNode.val().typeParamsLeafN);
-		Node right = addNode(funSigLeafNode.val().paramLeafN);
-		return new Node("FunSig", left, right);
+		Node right = addNode(funSigLeafNode.val().paramsLeafN);
+		return new Node(label, left, right);
 	}
 
-	Node addModifier(ModifierLeafNode modifierLeafNode) {
-		String label = "Modifier: " + modifierLeafNode.val().modifier;
+	Node addModifier(ModifierLeafNode n) {
+		String label = "Modifier: ";// + n.val().modifier;
 		return new Node(label, null, null);
 	}
 
-	Node addParam(ParamLeafNode paramLeafNode) {
-		Node left = addNode(paramLeafNode.val().typeLeafN);
-		Node right = addNode(paramLeafNode.val().exprLeafN);
-		return new Node("Param", left, right);
+	Node addParam(ParamLeafNode n) {
+		String label = "Param: " + n.val().paramName;
+		Node left = addNode(n.val().paramTypeLeafN);
+		Node right = addNode(n.val().exprLeafN);
+		return new Node(label, left, right);
 	}
 
 	Node addTypeParam(TypeParamLeafNode n) {
@@ -181,7 +179,7 @@ public class BinaryTreeMaker {
 
 	Node addClassParam(ClassParamLeafNode classParamLeafNode) {
 		String label = "ClassParam: " + classParamLeafNode.val().paramName;
-		Node left = addNode(classParamLeafNode.val().typeLeafN);
+		Node left = null;//addNode(classParamLeafNode.val().typeLeafN);
 		Node right = addNode(classParamLeafNode.val().exprLeafN);
 		return new Node(label, left, right);
 	}

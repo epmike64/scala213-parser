@@ -948,6 +948,13 @@ public class fParser {
 	private void typeDef(ProdArgs a) {
 		TypeDefLeafNode leafNode = new TypeDefLeafNode(a.lastOpN, token);
 		setRightLeafProlog(a, T_TYPE, leafNode);
+		accept(T_ID);
+		leafNode.val().typeName = prevToken.name();
+		if(token.kind == T_LBRACKET){
+			leafNode.val().variantTypeParamsLeafN = variantTypeParams();
+		}
+		acceptOpChar(OpChar.ASSIGN);
+		leafNode.val().typeLeafN = typeProd();
 	}
 
 	private void traitDef(ProdArgs a) {
