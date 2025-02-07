@@ -9,8 +9,9 @@ public class ClassDefLeafValue extends TokenLeafValue {
 	public ProdRootLeafN typeParamsLeafN;
 	public ProdRootLeafN accessModifierLeafN;
 	public ProdRootLeafN classParamsLeafN;
-	public ProdRootLeafN extendsLeafN;
+	public boolean extends_;
 	public ProdRootLeafN templateBodyLeafN;
+	public ProdRootLeafN classParentsLeafN;
 
 	public ClassDefLeafValue(fToken kw_token) {
 		super(kw_token);

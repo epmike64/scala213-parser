@@ -891,7 +891,7 @@ public class fParser {
 				return blockExpr();
 			}
 			default:
-				throw new RuntimeException("Unexpected token: " + token.kind);
+				return null;
 		}
 	}
 
@@ -990,10 +990,15 @@ public class fParser {
 		}
 	}
 
-	void constr() {
-		simpleType();
-
+	ProdRootLeafN classParents() {
+		ProdArgs a = initRootNodeProlog(ProdRootOp.CLASS_PARENTS_PRD);
+		ClassParentsLeafNode leafNode = new ClassParentsLeafNode(a.lastOpN, token);
+		setRightLeaf(a, leafNode);
+		leafNode.val().constrType = typeProd();
+		leafNode.val().constrArgExprs = argumentExprs();
+		return prodRootLeafN(a);
 	}
+
 	void classDef(ProdArgs a, boolean isCase) {
 		ClassDefLeafNode leafNode = new ClassDefLeafNode(a.lastOpN, token);
 		setRightLeafProlog(a, T_CLASS, leafNode);
@@ -1008,18 +1013,22 @@ public class fParser {
 		if(token.kind == T_LPAREN){
 			leafNode.val().classParamsLeafN = classParams();
 		}
-		if(token.kind == T_EXTENDS){
+		if(token.kind == T_EXTENDS) {
 			next();
-			switch (token.kind){
-				case T_LCURL:
+			leafNode.val().extends_ = true;
+		}
+		switch (token.kind){
+			case T_LCURL:
+				leafNode.val().templateBodyLeafN = templateBodyProd();
+				break;
+			case T_ID: case T_LPAREN:
+				leafNode.val().classParamsLeafN = classParents();
+				if(token.kind == T_LCURL){
 					leafNode.val().templateBodyLeafN = templateBodyProd();
-					break;
-				case T_ID: case T_LPAREN:
-					constr();
-					break;
-				default:
-					throw new RuntimeException("Unexpected token: " + token.kind);
-			}
+				}
+				break;
+			default:
+				throw new RuntimeException("Unexpected token: " + token.kind);
 		}
 	}
 
