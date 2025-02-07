@@ -703,8 +703,8 @@ public class fParser {
 			switch (token.opChar()) {
 				case MINUS:
 				case PLUS:
-					leafNode.val().variant = token.opChar();
 					accept(T_ID);
+					leafNode.val().setVariant(prevToken.opChar());
 					break;
 				case INVALID:
 					break;
@@ -1022,7 +1022,7 @@ public class fParser {
 				leafNode.val().templateBodyLeafN = templateBodyProd();
 				break;
 			case T_ID: case T_LPAREN:
-				leafNode.val().classParamsLeafN = classParents();
+				leafNode.val().classParentsLeafN = classParents();
 				if(token.kind == T_LCURL){
 					leafNode.val().templateBodyLeafN = templateBodyProd();
 				}
