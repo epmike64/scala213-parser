@@ -23,10 +23,8 @@ public class BinaryTreeMaker {
 		}
 	}
 
-	public Node createBinaryTree(CommonOpNode root) {
-		assert root instanceof RootOpN;
-		RootOpN rootOp = (RootOpN)root;
-		return addNode(rootOp.right());
+	public Node createBinaryTree(ProdRootLeafN root) {
+		return addNode(root.opNode());
 	}
 
 	Node addNode(fTree.BsNode n) {

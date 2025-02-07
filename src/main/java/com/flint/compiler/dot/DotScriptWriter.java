@@ -9,7 +9,7 @@ public class DotScriptWriter {
 
 	public String generateDotFile(String filename, ProdRootLeafN root, String fileContent) {
 		BinaryTreeMaker treeMaker= new  BinaryTreeMaker();
-		String dotScript = createDotScript(treeMaker.createBinaryTree(root.opNode()), fileContent);
+		String dotScript = createDotScript(treeMaker.createBinaryTree(root), fileContent);
 		//write to file
 		try (FileWriter writer = new FileWriter(filename)) {
 			writer.write(dotScript);
