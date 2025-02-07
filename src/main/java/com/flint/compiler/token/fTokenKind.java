@@ -4,7 +4,7 @@ package com.flint.compiler.token;
 public enum fTokenKind {
 	T_EOF(),
 	T_ERROR(),
-	T_NL(),
+//	T_NL(),
 	T_ID(fTokenTag.NAMED),
 	T_INT_LIT(fTokenTag.NUMERIC),
 	T_LNG_LIT(fTokenTag.NUMERIC),

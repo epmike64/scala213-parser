@@ -179,14 +179,14 @@ public class fParser {
 		switch (a.prevNKind) {
 			case N_ROOT: {
 				// ROOT="case x"
-				prodFirstIdLeaf(a, T_ID, T_LPAREN, T_RPAREN, T_SEMI, T_NL);
+				prodFirstIdLeaf(a, T_ID, T_LPAREN, T_RPAREN, T_SEMI);
 				a.isContinue = true;
 				return;
 			}
 			case N_ID_OPERATOR: {
 				// SimplePatternA {OP SimplePatternB }
 				// x="SimplePatternB"
-				prodRightIdLeaf(a, T_ID, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL);
+				prodRightIdLeaf(a, T_ID, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI);
 				a.isContinue = true;
 				return;
 			}
@@ -199,14 +199,14 @@ public class fParser {
 					a.prevNKind = fTreeNKind.N_ID_LEAF;
 					next();
 					a.lastOpN.setRight(typeProd());
-					expectOneOf(0, T_ID, T_SEMI, T_NL);
+					expectOneOf(0, T_ID, T_SEMI);
 					//Pattern1 = "x : type { | Pattern1 }"
 					a.isContinue = false;
 
 				} else {
 					a.prevNKind = fTreeNKind.N_ID_OPERATOR;
 					next();
-					expectOneOf(0, T_ID, T_FAT_ARROW, T_SEMI, T_NL);
+					expectOneOf(0, T_ID, T_FAT_ARROW, T_SEMI);
 					// SimplePatternA {OP SimplePatternB }
 					// expect "SimplePatternB",
 					a.isContinue = true;
@@ -222,14 +222,14 @@ public class fParser {
 		switch (a.prevNKind) {
 			case N_ROOT: {
 				// ROOT=": x"
-				prodFirstIdLeaf(a, T_COMMA, T_ID, T_LBRACKET, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL);
+				prodFirstIdLeaf(a, T_COMMA, T_ID, T_LBRACKET, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI);
 				a.isContinue = true;
 				return;
 			}
 //			case N_ID_OPERATOR: {
 //				//  ID_LEAF after COMMA
 //				// ", x"
-//				prodRightIdLeaf(a, T_COMMA, T_ID, T_RBRACKET, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_ELSE, T_SEMI, T_NL);
+//				prodRightIdLeaf(a, T_COMMA, T_ID, T_RBRACKET, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_ELSE, T_SEMI);
 //				a.isContinue = true;
 //				return;
 //			}
@@ -288,7 +288,7 @@ public class fParser {
 		switch (a.prevNKind) {
 			case N_ROOT: {
 				// ID_LEAF="x"
-				prodFirstIdLeaf(a, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_ELSE, T_FAT_ARROW, T_SEMI, T_NL);
+				prodFirstIdLeaf(a, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_ELSE, T_FAT_ARROW, T_SEMI);
 				a.isContinue = true;
 				return;
 			}
@@ -296,7 +296,7 @@ public class fParser {
 			case N_ID_OPERATOR: {
 				//  ID_LEAF=x after ( ID_OPERATOR, COMMA )
 				// "+ x" or ", x"
-				prodRightIdLeaf(a, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_ELSE, T_SEMI, T_NL);
+				prodRightIdLeaf(a, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_ELSE, T_SEMI);
 				a.isContinue = true;
 				return;
 			}
@@ -313,7 +313,7 @@ public class fParser {
 					// " x : 'type' "
 					// Parse 'Type' Prod
 					a.lastOpN.setRight(typeProd());
-					expectOneOf(0, T_ID, T_SEMI, T_NL);
+					expectOneOf(0, T_ID, T_SEMI);
 					a.isContinue = true;
 					return;
 
@@ -324,7 +324,7 @@ public class fParser {
 					// " func(x) = 'expression' "
 					// Parse 'Expression' Prod
 					a.lastOpN.setRight(expressionProd());
-					expectOneOf(0, T_SEMI, T_NL);
+					expectOneOf(0, T_SEMI);
 					a.isContinue = true;
 					return;
 
@@ -332,7 +332,7 @@ public class fParser {
 					next();
 					// ID_OPERATOR is MATH, FUNC_CALL
 					// "x +", "func(x) + "
-					expectOneOf(0, T_ID, T_IF, T_LPAREN, T_NL);
+					expectOneOf(0, T_ID, T_IF, T_LPAREN);
 					a.isContinue = true;
 					return;
 				}
@@ -419,7 +419,7 @@ public class fParser {
 				typeWithTypeArgs.val().typeArgsLeafN = types(null);
 				accept(T_RBRACKET);
 				a.prevNKind = fTreeNKind.N_TYPE_LEAF;
-				expectOneOf(0, T_ID, T_COMMA, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL); //RPAREN: func()()
+				expectOneOf(0, T_ID, T_COMMA, T_RPAREN, T_FAT_ARROW, T_SEMI); //RPAREN: func()()
 				a.isContinue = true;
 				return;
 			}
@@ -452,7 +452,7 @@ public class fParser {
 				assert a.lastOpN.right() == null;
 				a.lastOpN.setRight(subExpr);
 				a.prevNKind = fTreeNKind.N_ID_LEAF;
-				expectOneOf(0, T_ID, T_COMMA, T_FAT_ARROW, T_RPAREN, T_SEMI, T_NL);
+				expectOneOf(0, T_ID, T_COMMA, T_FAT_ARROW, T_RPAREN, T_SEMI);
 				a.isContinue = true;
 				return;
 			}
@@ -473,7 +473,7 @@ public class fParser {
 				funCallLeaf.val().funcArgsLeafN = exprs(null);
 				accept(T_RPAREN);
 				a.prevNKind = fTreeNKind.N_FUN_CALL_LEAF;
-				expectOneOf(0, T_ID, T_COMMA, T_FAT_ARROW, T_SEMI, T_NL); //RPAREN: func()()
+				expectOneOf(0, T_ID, T_COMMA, T_FAT_ARROW, T_SEMI); //RPAREN: func()()
 				a.isContinue = true;
 				return;
 			}
@@ -500,7 +500,7 @@ public class fParser {
 				assert a.lastOpN.right() == null;
 				a.lastOpN.setRight(subExpr);
 				a.prevNKind = fTreeNKind.N_ID_LEAF;
-				expectOneOf(0, T_ID, T_COMMA, T_IF, T_ELSE, T_FAT_ARROW, T_RPAREN, T_SEMI, T_NL);
+				expectOneOf(0, T_ID, T_COMMA, T_IF, T_ELSE, T_FAT_ARROW, T_RPAREN, T_SEMI);
 				a.isContinue = true;
 				return;
 			}
@@ -522,7 +522,7 @@ public class fParser {
 				next();
 				assert a.lastOpN.right() == null;
 				a.lastOpN.setRight(typeProd());
-				expectOneOf(0, T_COMMA, T_RPAREN, T_RBRACKET, T_SEMI, T_NL);
+				expectOneOf(0, T_COMMA, T_RPAREN, T_RBRACKET, T_SEMI);
 				return;
 			}
 			default:
@@ -657,11 +657,11 @@ public class fParser {
 		switch (getPrevNKind(a, fTreeNKind.N_ID_LEAF)) {
 			case N_ROOT: {
 				// ROOT="val x"
-				prodFirstCommonLeaf(a, leafNode, false, 0, T_ID, T_SEMI, T_NL);
+				prodFirstCommonLeaf(a, leafNode, false, 0, T_ID, T_SEMI);
 				break;
 			}
 			case N_ID_OPERATOR: {
-				prodRightCommonLeaf(a, leafNode, false, 0, T_ID, T_SEMI, T_NL);
+				prodRightCommonLeaf(a, leafNode, false, 0, T_ID, T_SEMI);
 				break;
 			}
 			default:
@@ -1197,7 +1197,7 @@ public class fParser {
 				constrPatternLeafNode.val().patternLeafN = pattern();
 				a.lastOpN.setRight(constrPatternLeafNode);
 				accept(T_RPAREN);
-				expectOneOf(0, T_ID, T_SEMI, T_NL);
+				expectOneOf(0, T_ID, T_SEMI);
 			}
 			default:
 				throw new RuntimeException("Unexpected token: " + token.kind);
@@ -1270,7 +1270,7 @@ public class fParser {
 		}
 		accept(T_FAT_ARROW);
 		leafNode.val().blockLeafN = blockProd();
-		expectOneOf(0, T_CASE, T_RCURL, T_NL, T_SEMI);
+		expectOneOf(0, T_CASE, T_RCURL, T_SEMI);
 	}
 
 	void caseClassesProdLoop(ProdArgs a) {
