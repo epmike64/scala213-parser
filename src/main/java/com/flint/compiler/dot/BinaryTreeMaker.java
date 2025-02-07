@@ -177,15 +177,15 @@ public class BinaryTreeMaker {
 		return new Node(label, left, null);
 	}
 
-	Node addClassParam(ClassParamLeafNode classParamLeafNode) {
-		String label = "ClassParam: " + classParamLeafNode.val().paramName;
-		Node left = null;//addNode(classParamLeafNode.val().typeLeafN);
-		Node right = addNode(classParamLeafNode.val().exprLeafN);
+	Node addClassParam(ClassParamLeafNode n) {
+		String label = "ClassParam: " + n.val().paramName;
+		Node left = addNode(n.val().paramTypeLeafN);
+		Node right = addNode(n.val().exprLeafN);
 		return new Node(label, left, right);
 	}
 
 	Node addOp(OperatorNode opNode) {
-		String label = "OP: " + opNode.val().op_token.name();
+		String label = "OP=<" + opNode.val().op_token.name() + ">";
 		Node left = addNode(opNode.left());
 		Node right = addNode(opNode.right());
 		return new Node(label, left, right);
@@ -198,17 +198,17 @@ public class BinaryTreeMaker {
 		return new Node(label, null, null);
 	}
 
-	Node addClassDef(ClassDefLeafNode classDefLeaf) {
-		String label = "Class: " + classDefLeaf.val().className + "\nCase: " + classDefLeaf.val().isCase;
-		ProdRootLeafN p1 = classDefLeaf.val().typeParamsLeafN;
-		ProdRootLeafN p2 = classDefLeaf.val().classParamsLeafN;
+	Node addClassDef(ClassDefLeafNode n) {
+		String label = "Class: " + n.val().className + "\nCase: " + n.val().isCase;
 
-		Node n1 = new Node("Class Prop1",  addNode(p1),  addNode(p2));
+		Node l1 = addNode(n.val().typeParamsLeafN);
+		Node l2 = addNode(n.val().classParamsLeafN);
+		Node n1 = new Node("Class Prop1",  l1,  l2);
 
-		p1 = classDefLeaf.val().classParentsLeafN;
-		p2 = classDefLeaf.val().templateBodyLeafN;
+		l1 = addNode(n.val().classParentsLeafN);
+		l2 = addNode(n.val().templateBodyLeafN);
 
-		Node n2 = new Node("Class Prop2", addNode(p1),  addNode(p2));
+		Node n2 = new Node("Class Prop2", l1, l2);
 		return new Node(label, n1, n2);
 	}
 
