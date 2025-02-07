@@ -853,6 +853,48 @@ public class fParser {
 		return prodRootLeafN(a);
 	}
 
+	ProdRootLeafN blockExpr() {
+		accept(T_LCURL);
+		ProdRootLeafN v;
+		switch (token.kind){
+			case T_CASE:{
+				v = caseClassesProd();
+				break;
+			}
+			default:{
+				v = blockProd();
+				break;
+			}
+		}
+		accept(T_RCURL);
+		return v;
+	}
+
+	ProdRootLeafN argumentExprs() {
+		switch (token.kind){
+			case T_LPAREN:{
+				ProdArgs a = null;
+				accept(T_LPAREN);
+				if(token.kind != T_RPAREN){
+					a = initRootNodeProlog(ProdRootOp.ARG_EXPRS_PRD);
+					setRightLeaf(a, expressionProd());
+					while(token.kind == T_COMMA){
+						insertCommaOp(a, next());
+						setRightLeaf(a, expressionProd());
+					}
+				}
+				accept(T_RPAREN);
+				if(a != null) return prodRootLeafN(a);
+				return null;
+			}
+			case T_LCURL:{
+				return blockExpr();
+			}
+			default:
+				throw new RuntimeException("Unexpected token: " + token.kind);
+		}
+	}
+
 	ProdRootLeafN selfInvocation() {
 		accept(T_THIS);
 		accept(T_LPAREN);
@@ -948,6 +990,10 @@ public class fParser {
 		}
 	}
 
+	void constr() {
+		simpleType();
+
+	}
 	void classDef(ProdArgs a, boolean isCase) {
 		ClassDefLeafNode leafNode = new ClassDefLeafNode(a.lastOpN, token);
 		setRightLeafProlog(a, T_CLASS, leafNode);
@@ -964,8 +1010,15 @@ public class fParser {
 		}
 		if(token.kind == T_EXTENDS){
 			next();
-			if(token.kind == T_LCURL){
-				leafNode.val().templateBodyLeafN = templateBodyProd();
+			switch (token.kind){
+				case T_LCURL:
+					leafNode.val().templateBodyLeafN = templateBodyProd();
+					break;
+				case T_ID: case T_LPAREN:
+					constr();
+					break;
+				default:
+					throw new RuntimeException("Unexpected token: " + token.kind);
 			}
 		}
 	}
