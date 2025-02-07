@@ -57,21 +57,17 @@ public class fTokenizer {
 					} while (reader.ch == SP || reader.ch == TAB || reader.ch == FF);
 					continue;
 
-				case LF: case CR: case ';': {
-					boolean isSemi = reader.ch == ';';
-					do {
-						reader.scanChar();
-						if(reader.ch == ';') isSemi = true;
-					} while (reader.ch == LF || reader.ch == CR || reader.ch == ';');
-					if(isSemi) {
-						tk = fTokenKind.T_SEMI;
-					} else {
-						tk = fTokenKind.T_NL;
-					}
-					break loop;
-				}
+				case CR:
+					reader.scanChar();
+					continue;
+
+				case LF:
+					reader.scanChar(); tk = fTokenKind.T_NL; break loop;
+
 				case ',':
 					reader.scanChar(); tk = fTokenKind.T_COMMA; break loop;
+				case ';':
+					reader.scanChar(); tk = fTokenKind.T_SEMI; break loop;
 				case '(':
 					reader.scanChar(); tk = fTokenKind.T_LPAREN; break loop;
 				case ')':
