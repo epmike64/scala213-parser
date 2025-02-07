@@ -1,11 +1,7 @@
 package com.flint.compiler;
 
-import com.flint.compiler.lang.Lang;
 import com.flint.compiler.parse.ProdArgs;
-import com.flint.compiler.token.OpChar;
-import com.flint.compiler.token.fOperatorKind;
-import com.flint.compiler.token.fOperatorMap;
-import com.flint.compiler.token.fTokenKind;
+import com.flint.compiler.token.*;
 import com.flint.compiler.token.type.NamedToken;
 import com.flint.compiler.token.type.fToken;
 import com.flint.compiler.tree.fTree.*;
@@ -785,10 +781,10 @@ public class fParser {
 		//add Modifiers
 		switch (token.kind) {
 			case T_VAL:
-				leafNode.val().lifeScope = Lang.VariableProp.VAL;
+				leafNode.val().storeType = fVariable.StoreType.VAL;
 				next();
 			case T_VAR:
-				leafNode.val().lifeScope = Lang.VariableProp.VAR;
+				leafNode.val().storeType = fVariable.StoreType.VAR;
 				next();
 				break;
 			default:

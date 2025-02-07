@@ -1,6 +1,6 @@
 package com.flint.compiler.token;
 
-import com.flint.compiler.lang.LangCheck;
+import com.flint.compiler.lang.MethNameCheck;
 import com.flint.compiler.token.type.fToken;
 
 import java.util.HashMap;
@@ -31,7 +31,7 @@ public class fOperatorMap {
 			case T_ID:
 				fOperatorKind op = map.get(token.name());
 				if(op != null) return op;
-				if(LangCheck.isValidMethName(token.name())) {
+				if(MethNameCheck.isMNameValid(token.name())) {
 					if(token.name().endsWith(":")) {
 						return fOperatorKind.O_ID_SMBLC_RIGHT_ASSC;
 					}

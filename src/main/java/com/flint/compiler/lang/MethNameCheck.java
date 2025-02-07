@@ -5,7 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-public class LangCheck {
+public class MethNameCheck {
 
 	// Set of Scala reserved keywords
 	private static final Set<String> SCALA_KEYWORDS = new HashSet<>(Arrays.asList(
@@ -21,7 +21,7 @@ public class LangCheck {
 	private static final Pattern VALID_SYMBOLIC_METHOD = Pattern.compile("^[!#%&*+/:<=>?@\\^|~-]+$");
 	private static final Pattern VALID_BACKTICK_METHOD = Pattern.compile("^`[^`]+`$");
 
-	public static boolean isValidMethName(String methodName) {
+	public static boolean isMNameValid(String methodName) {
 		if (methodName == null || methodName.isEmpty()) {
 			return false;  // Empty or null names are invalid
 		}
