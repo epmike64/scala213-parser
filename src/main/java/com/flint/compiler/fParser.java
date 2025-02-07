@@ -9,6 +9,7 @@ import com.flint.compiler.tree.leaves.nodes.*;
 import com.flint.compiler.tree.operators.nodes.*;
 import com.flint.compiler.tree.operators.values.OperatorValue;
 import static com.flint.compiler.token.fTokenKind.*;
+import static com.flint.compiler.tree.operators.nodes.ProdRootOp.CONSTR_BLOCK_PRD;
 
 public class fParser {
 	private fToken prevToken;
@@ -588,6 +589,10 @@ public class fParser {
 		return caseClassesProd(null, null, null);
 	}
 
+	private ProdRootLeafN constrBlockProd() {
+		return constrBlockProd(null, null, null);
+	}
+
 	private ProdRootLeafN blockProd() {
 		return blockProd(null, null, null);
 	}
@@ -610,6 +615,10 @@ public class fParser {
 
 	private ProdRootLeafN caseClassesProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
 		return commonProd(ProdRootOp.CASE_CLASSES_PRD, wrapSubExpr, prevNKind, opToken);
+	}
+
+	private ProdRootLeafN constrBlockProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+		return commonProd(CONSTR_BLOCK_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
 	private ProdRootLeafN blockProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
@@ -661,17 +670,19 @@ public class fParser {
 	}
 
 	ProdRootLeafN typeParams() {
+		accept(T_LBRACKET);
 		ProdArgs a = initRootNodeProlog(ProdRootOp.TYPE_PARAM_PRD);
 		setRightLeaf(a, typeParam());
 		while (token.kind == T_COMMA) {
 			insertCommaOp(a, next());
 			setRightLeaf(a, typeParam());
 		}
+		accept(T_RBRACKET);
 		return prodRootLeafN(a);
 	}
 
 	ProdRootLeafN variantTypeParams() {
-
+		accept(T_LBRACKET);
 		ProdArgs a = initRootNodeProlog(ProdRootOp.TYPE_PARAM_PRD);
 		setRightLeaf(a, variantTypeParam());
 
@@ -679,6 +690,7 @@ public class fParser {
 			insertCommaOp(a, next());
 			setRightLeaf(a, variantTypeParam());
 		}
+		accept(T_RBRACKET);
 		return prodRootLeafN(a);
 	}
 
@@ -712,9 +724,7 @@ public class fParser {
 		accept(T_ID);
 		leafNode.val().typeParamName = prevToken.name();
 		if (token.kind == T_LBRACKET) {
-			accept(T_LBRACKET);
 			leafNode.val().variantTypeParamsLeafN = variantTypeParams();
-			accept(T_RBRACKET);
 		}
 		if (token.kind == T_LOWER_BOUND) {
 			next();
@@ -735,18 +745,46 @@ public class fParser {
 		return prodRootLeafN(a);
 	}
 
+	ProdRootLeafN paramClauses(){
+		ProdArgs a = initRootNodeProlog(ProdRootOp.PARAM_CLAUSES_PRD);
+		while(token.kind == T_LPAREN){
+			ProdRootLeafN v = paramClause();
+			if(v != null){
+				setRightLeaf(a, v);
+				insertSemiOp(a);
+			}
+		}
+		return prodRootLeafN(a);
+	}
+
+	ProdRootLeafN paramClause() {
+		accept(T_LPAREN);
+		if(token.kind == T_RPAREN){
+			accept(T_RPAREN);
+			return null;
+		}
+		ProdRootLeafN params = params();
+		accept(T_RPAREN);
+		return params;
+	}
+
 	ProdRootLeafN params() {
 		ProdArgs a = initRootNodeProlog(ProdRootOp.PARAM_PRD);
-		param(a);
-		while (token.kind == T_COMMA) {
+		boolean isImplicit = false;
+		if(token.kind == T_IMPLICIT){
+			isImplicit = true;
 			next();
-			insertCommaOp(a, prevToken);
-			param(a);
+		}
+		param(a, isImplicit);
+		while (token.kind == T_COMMA) {
+			insertCommaOp(a, next());
+			param(a, false);
 		}
 		return prodRootLeafN(a);
 	}
 
 	ProdRootLeafN classParams() {
+		accept(T_LPAREN);
 		ProdArgs a = initRootNodeProlog(ProdRootOp.CLASS_PARAMS_PRD);
 		classParam(a);
 		while (token.kind == T_COMMA) {
@@ -754,16 +792,19 @@ public class fParser {
 			insertCommaOp(a, prevToken);
 			classParam(a);
 		}
+		accept(T_RPAREN);
 		return prodRootLeafN(a);
 	}
 
 
-	void param(ProdArgs a) {
+	void param(ProdArgs a, boolean isImplicit) {
 
 		ParamLeafNode leafNode = new ParamLeafNode(a.lastOpN, token);
 		setRightLeaf(a, leafNode);
 		accept(T_ID);
 		leafNode.val().paramName = prevToken.name();
+		leafNode.val().isImplicit = isImplicit;
+
 		if (isColonOpT(0)) {
 			next();
 			leafNode.val().paramTypeLeafN = typeProd();
@@ -800,26 +841,33 @@ public class fParser {
 		}
 	}
 
-	ProdRootLeafN paramClauses() {
-		accept(T_LPAREN);
-		ProdRootLeafN paramsLeafN = params();
-		accept(T_RPAREN);
-		return paramsLeafN;
-	}
-
 	ProdRootLeafN funSig() {
 		ProdArgs a = initRootNodeProlog(ProdRootOp.FUN_SIG_PRD);
-		accept(T_ID);
-		FunSigLeafNode leafNode = new FunSigLeafNode(a.lastOpN, prevToken);
-		a.lastOpN.setRight(leafNode);
+		FunSigLeafNode leafNode = new FunSigLeafNode(a.lastOpN, token);
+		setRightLeafProlog(a, T_ID, leafNode);
 		leafNode.val().funName = prevToken.name();
 		if (token.kind == T_LBRACKET) {
-			accept(T_LBRACKET);
 			leafNode.val().typeParamsLeafN = typeParams();
-			accept(T_RBRACKET);
 		}
 		leafNode.val().paramsLeafN = paramClauses();
 		return prodRootLeafN(a);
+	}
+
+	ProdRootLeafN selfInvocation() {
+		accept(T_THIS);
+		accept(T_LPAREN);
+		ProdArgs a = null;
+		if(token.kind != T_RPAREN){
+			a = initRootNodeProlog(ProdRootOp.SELF_INVOCATION_PRD);
+			setRightLeaf(a, expressionProd());
+			while(token.kind == T_COMMA){
+				insertCommaOp(a, next());
+				setRightLeaf(a, expressionProd());
+			}
+		}
+		accept(T_RPAREN);
+		if(a != null) return prodRootLeafN(a);
+		return null;
 	}
 
 	void funDef(ProdArgs a) {
@@ -835,15 +883,20 @@ public class fParser {
 					acceptOpChar(OpChar.ASSIGN);
 					leafNode.val().funSigExprLeafN =expressionProd();
 				} else {
-					accept(T_LBRACKET);
 					leafNode.val().funSigBlockLeafN = blockProd();
-					accept(T_RBRACKET);
 				}
 				break;
 			case T_THIS:
-				accept(T_LPAREN);
-				leafNode.val().thisParamsLeafN = params();
-				accept(T_RPAREN);
+				leafNode.val().thisParamsLeafN = paramClauses();
+				if(isAssignOpT(0)){
+					next();
+					if(token.kind == T_THIS){
+						leafNode.val().funSigBlockLeafN = selfInvocation();
+					}
+					leafNode.val().funSigBlockLeafN = blockProd();
+				} else {
+					leafNode.val().funSigBlockLeafN = blockProd();
+				}
 				break;
 			default:
 				throw new RuntimeException("Unexpected token: " + token.kind);
@@ -861,9 +914,7 @@ public class fParser {
 		accept(T_ID);
 		leafNode.val().traitName = prevToken.name();
 		if(token.kind == T_LBRACKET){
-			next();
 			leafNode.val().variantTypeParamsLeafN = variantTypeParams();
-			accept(T_RBRACKET);
 		}
 		if(token.kind == T_EXTENDS){
 			next();
@@ -873,9 +924,7 @@ public class fParser {
 			leafNode.val().traitParentsLeafN = typeProd();
 		}
 		if(token.kind == T_LCURL) {
-			next();
 			leafNode.val().templateBodyLeafN = templateBodyProd();
-			accept(T_RCURL);
 		}
 	}
 
@@ -907,16 +956,15 @@ public class fParser {
 		leafNode.val().className = prevToken.name();
 		leafNode.val().isCase = isCase;
 		if(token.kind == T_LBRACKET) {
-			next();
 			leafNode.val().typeParamsLeafN = variantTypeParams();
-			accept(T_RBRACKET);
 		}
 		leafNode.val().accessModifierLeafN = accessModifier();
-		leafNode.val().classParamsLeafN = classParams();
+		if(token.kind == T_LPAREN){
+			leafNode.val().classParamsLeafN = classParams();
+		}
 		if(token.kind == T_EXTENDS){
 			next();
-			if(token.kind == T_LBRACKET){
-				next();
+			if(token.kind == T_LCURL){
 				leafNode.val().templateBodyLeafN = templateBodyProd();
 			}
 		}
@@ -986,16 +1034,22 @@ public class fParser {
 
 	void blockStatProdLoop(ProdArgs a, ProdRootOp prodRootOp) {
 
-		assert prodRootOp == ProdRootOp.BLOCK_PRD || prodRootOp == ProdRootOp.TEMPLATE_BODY_PRD;
+		accept(T_LCURL);
+
+		assert prodRootOp == CONSTR_BLOCK_PRD || prodRootOp == ProdRootOp.BLOCK_PRD || prodRootOp == ProdRootOp.TEMPLATE_BODY_PRD;
 		boolean p = prodRootOp == ProdRootOp.BLOCK_PRD;
 		boolean isCase = false;
+
+		if(prodRootOp == CONSTR_BLOCK_PRD && token.kind == T_THIS){
+			setRightLeaf(a, selfInvocation());
+		}
 
 		loop:
 		while (true) {
 			switch (token.kind) {
 				case T_SEMI:
 					skipSemi();
-					continue loop;
+					continue;
 
 				case T_RCURL:
 					break loop;
@@ -1053,6 +1107,7 @@ public class fParser {
 				insertSemiOp(a);
 			}
 		}
+		accept(T_RCURL);
 	}
 
 	void blockExprProdLoop(ProdArgs a) {
@@ -1284,6 +1339,10 @@ public class fParser {
 
 			case BLOCK_PRD:
 				blockStatProdLoop(a, ProdRootOp.BLOCK_PRD);
+				break;
+
+			case CONSTR_BLOCK_PRD:
+				blockStatProdLoop(a, CONSTR_BLOCK_PRD);
 				break;
 
 			case TEMPLATE_BODY_PRD:

@@ -4,6 +4,7 @@ import com.flint.compiler.token.type.fToken;
 import com.flint.compiler.tree.leaves.nodes.ProdRootLeafN;
 
 public class ParamLeafValue extends TokenLeafValue {
+	public boolean isImplicit;
 	public String paramName;
 	public ProdRootLeafN paramTypeLeafN;
 	public ProdRootLeafN exprLeafN;
