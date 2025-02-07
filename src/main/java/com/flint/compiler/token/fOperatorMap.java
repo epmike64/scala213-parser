@@ -18,7 +18,7 @@ public class fOperatorMap {
 			case T_SEMI:
 				return fOperatorKind.O_SEMI;
 			case T_ID:
-				if(LangCheck.isValidScalaMethodName(token.name())) {
+				if(LangCheck.isValidMethName(token.name())) {
 					if(token.name().endsWith(":")) {
 						return fOperatorKind.O_ID_SYM_RIGHT_ASSC;
 					}

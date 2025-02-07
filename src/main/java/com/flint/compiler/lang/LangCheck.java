@@ -21,7 +21,7 @@ public class LangCheck {
 	private static final Pattern VALID_SYMBOLIC_METHOD = Pattern.compile("^[!#%&*+/:<=>?@\\^|~-]+$");
 	private static final Pattern VALID_BACKTICK_METHOD = Pattern.compile("^`[^`]+`$");
 
-	public static boolean isValidScalaMethodName(String methodName) {
+	public static boolean isValidMethName(String methodName) {
 		if (methodName == null || methodName.isEmpty()) {
 			return false;  // Empty or null names are invalid
 		}
