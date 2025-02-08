@@ -1077,44 +1077,6 @@ public class fParser {
 		leafNode.val().isCase = isCase;
 	}
 
-//	private void templateStatLoop(ProdArgs a){
-//
-//		loop:
-//		while (true) {
-//			switch (token.kind){
-//				case T_IMPORT:
-//					importDef(a);
-//					break;
-//				case T_VAL:
-//					varDef(a);
-//					break;
-//				case T_VAR:
-//					varDef(a);
-//					break;
-//				case T_DEF:
-//					funDef(a);
-//					break;
-//				case T_TYPE:
-//					typeDef(a);
-//					break;
-//				case T_TRAIT:
-//					traitDef(a);
-//					break;
-//				case T_CLASS:
-//					classDef(a, false);
-//					break;
-//				case T_OBJECT:
-//					objectDef(a, false);
-//					break;
-//				default:
-//					setRightLeaf(a, expressionProd());
-//					break;
-//			}
-//			insertSemiOp(a);
-//		}
-//
-//	}
-
 	List<String> ids() {
 		List<String> ids = new ArrayList<>();
 		ids.add(accept(T_ID).name());
