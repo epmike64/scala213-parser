@@ -16,7 +16,7 @@ public interface fTree {
 		N_VARIANT_TYPE_PARAM_LEAF,
 		N_FUN_SIG_LEAF,
 		N_CLASS_DEF_LEAF,
-		N_TYPE_DEF_LEAF,
+		N_TYPE_DEF_DCL_LEAF,
 		N_TRAIT_DEF_LEAF,
 		N_OBJECT_DEF_LEAF,
 		N_IF_KW_LEAF,
@@ -31,6 +31,8 @@ public interface fTree {
 		N_CASE_LEAF,
 		N_TYPE_LEAF,
 		N_FAT_ARROW,
+
+		N_VAR_VAL_DCL_LEAF
 	}
 
 	/**

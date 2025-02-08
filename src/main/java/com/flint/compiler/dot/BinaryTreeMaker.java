@@ -73,14 +73,14 @@ public class BinaryTreeMaker {
 				return addParam((ParamLeafNode)n);
 			case N_FUN_SIG_LEAF:
 				return addFunSig((FunSigLeafNode)n);
-			case N_TYPE_DEF_LEAF:
-				return addTypeDef((TypeDefLeafNode)n);
+			case N_TYPE_DEF_DCL_LEAF:
+				return addTypeDef((TypeDefDclLeafNode)n);
 			case N_TRAIT_DEF_LEAF:
 				return addTraitDef((TraitDefLeafNode)n);
 			case N_OBJECT_DEF_LEAF:
 				return addObjectDef((ObjectDefLeafNode)n);
 			case N_FUN_DCL_LEAF:
-				return addFunDcl((FunDclLeafNode)n);
+				return addFunDcl((FunDclDefLeafNode)n);
 			case N_CASE_KW_LEAF:
 				return addCaseKw((CaseKwLeafNode)n);
 			case N_CONSTR_PATTERN_LEAF:
@@ -104,7 +104,7 @@ public class BinaryTreeMaker {
 		return new Node("Case", left, right);
 	}
 
-	Node addFunDcl(FunDclLeafNode funDclLeafNode) {
+	Node addFunDcl(FunDclDefLeafNode funDclLeafNode) {
 		Node left = addNode(funDclLeafNode.val().funSigLeafN);
 		Node right = null;//addNode(funDclLeafNode.val().exprLeafN);
 		return new Node("FunDcl", left, right);
@@ -122,10 +122,10 @@ public class BinaryTreeMaker {
 		return new Node(label, left, null);
 	}
 
-	Node addTypeDef(TypeDefLeafNode n) {
+	Node addTypeDef(TypeDefDclLeafNode n) {
 		String label = "TypeDef: " + n.val().typeName;
 		Node left = addNode(n.val().variantTypeParamsLeafN);
-		Node right = addNode(n.val().typeLeafN);
+		Node right = addNode(n.val().defTypeLeafN);
 		return new Node(label, left, right);
 	}
 

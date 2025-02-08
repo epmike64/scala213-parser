@@ -8,7 +8,12 @@ import com.flint.compiler.tree.fTree.*;
 import com.flint.compiler.tree.leaves.nodes.*;
 import com.flint.compiler.tree.operators.nodes.*;
 import com.flint.compiler.tree.operators.values.OperatorValue;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import static com.flint.compiler.token.fTokenKind.*;
+import static com.flint.compiler.tree.operators.nodes.ProdRootOp.BLOCK_PRD;
 import static com.flint.compiler.tree.operators.nodes.ProdRootOp.CONSTR_BLOCK_PRD;
 
 public class fParser {
@@ -37,11 +42,11 @@ public class fParser {
 		}
 	}
 
-	private void accept(fTokenKind kind) {
+	private fToken accept(fTokenKind kind) {
 		if (token.kind != kind) {
 			throw new AssertionError("Expected " + kind + " but found " + token.kind);
 		}
-		next();
+		return next();
 	}
 
 	fToken lookAhead(int n) {
@@ -288,6 +293,7 @@ public class fParser {
 		switch (a.prevNKind) {
 			case N_ROOT: {
 				// ID_LEAF="x"
+				// Prefix Operator not implemented
 				prodFirstIdLeaf(a, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_ELSE, T_FAT_ARROW, T_SEMI, T_NL);
 				a.isContinue = true;
 				return;
@@ -622,7 +628,7 @@ public class fParser {
 	}
 
 	private ProdRootLeafN blockProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
-		return commonProd(ProdRootOp.BLOCK_PRD, wrapSubExpr, prevNKind, opToken);
+		return commonProd(BLOCK_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
 	private ProdRootLeafN templateBody(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
@@ -912,10 +918,21 @@ public class fParser {
 		return null;
 	}
 
-	void funDef(ProdArgs a) {
-		FunDclLeafNode leafNode = new FunDclLeafNode(a.lastOpN, token);
+	void funDcl(ProdArgs a) {
+		FunDclDefLeafNode leafNode = new FunDclDefLeafNode(a.lastOpN, token);
 		setRightLeafProlog(a, T_DEF, leafNode);
+		leafNode.val().defDcl = fVariable.DefDcl.DCL;
+		leafNode.val().funSigLeafN = funSig();
+		if(isAssignOpT(0)) {
+			next();
+			leafNode.val().funSigTypeLeafN = typeProd();
+		}
+	}
 
+	void funDef(ProdArgs a) {
+		FunDclDefLeafNode leafNode = new FunDclDefLeafNode(a.lastOpN, token);
+		setRightLeafProlog(a, T_DEF, leafNode);
+		leafNode.val().defDcl = fVariable.DefDcl.DEF;
 		switch (token.kind){
 			case T_ID:
 				leafNode.val().funSigLeafN = funSig();
@@ -946,15 +963,28 @@ public class fParser {
 	}
 
 	private void typeDef(ProdArgs a) {
-		TypeDefLeafNode leafNode = new TypeDefLeafNode(a.lastOpN, token);
+		TypeDefDclLeafNode leafNode = new TypeDefDclLeafNode(a.lastOpN, token);
+		leafNode.val().defDcl = fVariable.DefDcl.DEF;
 		setRightLeafProlog(a, T_TYPE, leafNode);
-		accept(T_ID);
-		leafNode.val().typeName = prevToken.name();
+		leafNode.val().typeName = accept(T_ID).name();
 		if(token.kind == T_LBRACKET){
 			leafNode.val().variantTypeParamsLeafN = variantTypeParams();
 		}
 		acceptOpChar(OpChar.ASSIGN);
-		leafNode.val().typeLeafN = typeProd();
+		leafNode.val().defTypeLeafN = typeProd();
+	}
+
+	private void typeDcl(ProdArgs a) {
+		TypeDefDclLeafNode leafNode = new TypeDefDclLeafNode(a.lastOpN, token);
+		leafNode.val().defDcl = fVariable.DefDcl.DCL;
+		setRightLeafProlog(a, T_TYPE, leafNode);
+		leafNode.val().typeName = accept(T_ID).name();
+		if(token.kind == T_LOWER_BOUND){
+			leafNode.val().dclLowerTypeLeafN = typeProd();
+		}
+		if(token.kind == T_UPPER_BOUND){
+			leafNode.val().dclUpperTypeLeafN = typeProd();
+		}
 	}
 
 	private void traitDef(ProdArgs a) {
@@ -1047,66 +1077,119 @@ public class fParser {
 		leafNode.val().isCase = isCase;
 	}
 
-	private void templateStatLoop(ProdArgs a){
+//	private void templateStatLoop(ProdArgs a){
+//
+//		loop:
+//		while (true) {
+//			switch (token.kind){
+//				case T_IMPORT:
+//					importDef(a);
+//					break;
+//				case T_VAL:
+//					varDef(a);
+//					break;
+//				case T_VAR:
+//					varDef(a);
+//					break;
+//				case T_DEF:
+//					funDef(a);
+//					break;
+//				case T_TYPE:
+//					typeDef(a);
+//					break;
+//				case T_TRAIT:
+//					traitDef(a);
+//					break;
+//				case T_CLASS:
+//					classDef(a, false);
+//					break;
+//				case T_OBJECT:
+//					objectDef(a, false);
+//					break;
+//				default:
+//					setRightLeaf(a, expressionProd());
+//					break;
+//			}
+//			insertSemiOp(a);
+//		}
+//
+//	}
+
+	List<String> ids() {
+		List<String> ids = new ArrayList<>();
+		ids.add(accept(T_ID).name());
+		while (token.kind == T_COMMA) {
+			next();
+			ids.add(accept(T_ID).name());
+		}
+		return ids;
+	}
+
+	void varValDcl(ProdArgs a, fVariable.StoreType storeType) {
+		VarValDclLeafNode leafNode = new VarValDclLeafNode(a.lastOpN, token);
+		leafNode.val().storeType = storeType;
+		leafNode.val().ids = ids();
+		acceptOpChar(OpChar.COLON);
+		leafNode.val().typeLeafN = typeProd();
+	}
+
+
+	void templateStatProdLoop(ProdArgs a) {
+		accept(T_LCURL);
 
 		loop:
 		while (true) {
-			switch (token.kind){
-				case T_IMPORT:
+			switch (token.kind) {
+				case T_NL: case T_SEMI: {
+					next();
+					continue;
+				}
+
+				case T_RCURL:
+					break loop;
+
+				case T_IMPORT: {
 					importDef(a);
 					break;
-				case T_VAL:
-					varDef(a);
+				}
+
+				case T_VAL: {
+					varValDcl(a, fVariable.StoreType.VAL);
 					break;
-				case T_VAR:
-					varDef(a);
+				}
+				case T_VAR: {
+					varValDcl(a, fVariable.StoreType.VAR);
 					break;
-				case T_DEF:
-					funDef(a);
+				}
+
+				case T_DEF: {
+					funDcl(a);
 					break;
-				case T_TYPE:
-					typeDef(a);
+				}
+
+				case T_TYPE: {
+					typeDcl(a);
 					break;
-				case T_TRAIT:
-					traitDef(a);
-					break;
-				case T_CLASS:
-					classDef(a, false);
-					break;
-				case T_OBJECT:
-					objectDef(a, false);
-					break;
-				default:
+				}
+
+				case T_ID: case T_NEW: case T_LPAREN: case T_LCURL:
+				case T_IF: case T_T_WHILE: case T_TRY: case T_DO: case T_FOR: case T_THROW: case T_RETURN:{
 					setRightLeaf(a, expressionProd());
 					break;
+				}
+
+				default:
+					throw new RuntimeException("Unexpected token: " + token.kind);
 			}
-			insertSemiOp(a);
 		}
-
-	}
-
-	void valDcl(ProdArgs a) {
-		throw new RuntimeException("Not implemented");
-	}
-
-	void varDcl(ProdArgs a) {
-		throw new RuntimeException("Not implemented");
-	}
-
-	void funDcl(ProdArgs a) {
-		throw new RuntimeException("Not implemented");
-	}
-
-	void typeDcl(ProdArgs a) {
-		throw new RuntimeException("Not implemented");
+		accept(T_RCURL);
 	}
 
 	void blockStatProdLoop(ProdArgs a, ProdRootOp prodRootOp) {
 
 		accept(T_LCURL);
+		assert prodRootOp == CONSTR_BLOCK_PRD || prodRootOp == BLOCK_PRD;
 
-		assert prodRootOp == CONSTR_BLOCK_PRD || prodRootOp == ProdRootOp.BLOCK_PRD || prodRootOp == ProdRootOp.TEMPLATE_BODY_PRD;
-		boolean p = prodRootOp == ProdRootOp.BLOCK_PRD;
 		boolean isCase = false;
 
 		if(prodRootOp == CONSTR_BLOCK_PRD && token.kind == T_THIS){
@@ -1129,20 +1212,21 @@ public class fParser {
 					break;
 
 				case T_VAL: {
-					if(p) patDef(a); else valDcl(a);
+					patDef(a);
+					break;
 				}
 				case T_VAR: {
-					if(p) varDef(a); else varDcl(a);
+					varDef(a);
 					break;
 				}
 
 				case T_DEF: {
-					if(p) funDef(a); else funDcl(a);
+					funDef(a);
 					break;
 				}
 
 				case T_TYPE: {
-					if(p) typeDef(a); else typeDcl(a);
+					typeDef(a);
 					break;
 				}
 
@@ -1169,9 +1253,14 @@ public class fParser {
 					break;
 				}
 
-				default:
+				case T_ID: case T_NEW: case T_LPAREN: case T_LCURL:
+				case T_IF: case T_T_WHILE: case T_TRY: case T_DO: case T_FOR: case T_THROW: case T_RETURN:{
 					setRightLeaf(a, expressionProd());
 					break;
+				}
+
+				default:
+					throw new RuntimeException("Unexpected token: " + token.kind);
 			}
 			if (!isCase) {
 				insertSemiOp(a);
@@ -1408,7 +1497,7 @@ public class fParser {
 				break;
 
 			case BLOCK_PRD:
-				blockStatProdLoop(a, ProdRootOp.BLOCK_PRD);
+				blockStatProdLoop(a, BLOCK_PRD);
 				break;
 
 			case CONSTR_BLOCK_PRD:
@@ -1416,7 +1505,7 @@ public class fParser {
 				break;
 
 			case TEMPLATE_BODY_PRD:
-				blockStatProdLoop(a, ProdRootOp.TEMPLATE_BODY_PRD);
+				templateStatProdLoop(a);
 				break;
 
 			case PATTERN1_PRD:

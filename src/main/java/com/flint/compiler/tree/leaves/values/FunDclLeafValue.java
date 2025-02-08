@@ -1,10 +1,12 @@
 package com.flint.compiler.tree.leaves.values;
 
 import com.flint.compiler.token.fTokenKind;
+import com.flint.compiler.token.fVariable;
 import com.flint.compiler.token.type.fToken;
 import com.flint.compiler.tree.leaves.nodes.ProdRootLeafN;
 
 public class FunDclLeafValue extends TokenLeafValue {
+	public fVariable.DefDcl defDcl;
 	public ProdRootLeafN funSigLeafN;
 	public ProdRootLeafN funSigTypeLeafN;
 	public ProdRootLeafN funSigExprLeafN;
