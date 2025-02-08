@@ -195,7 +195,7 @@ public class fParser {
 			case N_ROOT: {
 				// SimplePatternA {OP SimplePatternB }
 				// x="SimplePatternA"
-				addIdLeaf(a, parseIdTyped(a), T_ID, T_LPAREN, T_RPAREN, T_SEMI, T_NL);
+				setRLeaf(a, parseIdTyped(a), T_ID, T_LPAREN, T_RPAREN, T_SEMI, T_NL);
 				a.isContinue = true;
 				return;
 			}
@@ -211,7 +211,7 @@ public class fParser {
 			case N_ID_OPERATOR: {
 				// SimplePatternA {OP SimplePatternB }
 				// x="SimplePatternB"
-				addIdLeaf(a, parseIdTyped(a), T_ID, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL);
+				setRLeaf(a, parseIdTyped(a), T_ID, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL);
 				a.isContinue = true;
 				return;
 			}
@@ -224,7 +224,7 @@ public class fParser {
 		switch (a.prevNKind) {
 			case N_ROOT: {
 				// ROOT=": x"
-				addIdLeaf(a, T_COMMA, T_ID, T_LBRACKET, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL);
+				addRightIdLeaf(a, T_COMMA, T_ID, T_LBRACKET, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL);
 				a.isContinue = true;
 				return;
 			}
@@ -239,7 +239,7 @@ public class fParser {
 			case N_ROOT: {
 				// ID_LEAF="x"
 				// Prefix Operator not implemented
-				addIdLeaf(a, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_ELSE, T_FAT_ARROW, T_SEMI, T_NL);
+				addRightIdLeaf(a, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_ELSE, T_FAT_ARROW, T_SEMI, T_NL);
 				a.isContinue = true;
 				return;
 			}
@@ -247,7 +247,7 @@ public class fParser {
 			case N_ID_OPERATOR: {
 				//  ID_LEAF=x after ( ID_OPERATOR, COMMA )
 				// "+ x" or ", x"
-				addIdLeaf(a, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_ELSE, T_SEMI, T_NL);
+				addRightIdLeaf(a, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_ELSE, T_SEMI, T_NL);
 				a.isContinue = true;
 				return;
 			}
@@ -590,11 +590,10 @@ public class fParser {
 
 	void patDef(ProdArgs a, fVariable.DefDcl defDcl, fVariable.StoreType storeType) {
 
-		PatDefLeafNode leafNode = new PatDefLeafNode(a.lastOpN, token);
+		PatDefLeafNode leafNode = new PatDefLeafNode(a.lastOpN, next());
+		setRightLeaf(a, leafNode);
 		leafNode.val().defDcl = defDcl;
 		leafNode.val().storeType = storeType;
-		fTokenKind k = storeType == VAL ? T_VAL : T_VAR;
-		setRightLeafProlog(a, k, leafNode);
 
 		leafNode.val().pattern2sLeafN = pattern2s();
 		if (isColonOpT(0)) {
@@ -781,8 +780,8 @@ public class fParser {
 
 	ProdRootLeafN funSig() {
 		ProdArgs a = initRootNodeProlog(ProdRootOp.FUN_SIG_PRD);
-		FunSigLeafNode leafNode = new FunSigLeafNode(a.lastOpN, token);
-		setRightLeafProlog(a, T_ID, leafNode);
+		FunSigLeafNode leafNode = new FunSigLeafNode(a.lastOpN, accept(T_ID));
+		setRightLeaf(a, leafNode);
 		leafNode.val().funName = prevToken.name();
 		if (token.kind == T_LBRACKET) {
 			leafNode.val().typeParamsLeafN = typeParams();
@@ -850,20 +849,9 @@ public class fParser {
 		return null;
 	}
 
-//	void funDcl(ProdArgs a) {
-//		FunDclDefLeafNode leafNode = new FunDclDefLeafNode(a.lastOpN, token);
-//		setRightLeafProlog(a, T_DEF, leafNode);
-//		leafNode.val().defDcl = DCL;
-//		leafNode.val().funSigLeafN = funSig();
-//		if (isAssignOpT(0)) {
-//			next();
-//			leafNode.val().funSigTypeLeafN = typeProd();
-//		}
-//	}
-
 	void funDef(ProdArgs a) {
-		FunDclDefLeafNode leafNode = new FunDclDefLeafNode(a.lastOpN, token);
-		setRightLeafProlog(a, T_DEF, leafNode);
+		FunDclDefLeafNode leafNode = new FunDclDefLeafNode(a.lastOpN, accept(T_DEF));
+		setRightLeaf(a, leafNode);
 		leafNode.val().defDcl = fVariable.DefDcl.DEF;
 		switch (token.kind) {
 			case T_ID:
@@ -923,10 +911,9 @@ public class fParser {
 
 
 	private void traitDef(ProdArgs a) {
-		TraitDefLeafNode leafNode = new TraitDefLeafNode(a.lastOpN, token);
-		setRightLeafProlog(a, T_TRAIT, leafNode);
-		accept(T_ID);
-		leafNode.val().traitName = prevToken.name();
+		TraitDefLeafNode leafNode = new TraitDefLeafNode(a.lastOpN, accept(T_TRAIT));
+		setRightLeaf(a, leafNode);
+		leafNode.val().traitName = accept(T_ID).name();
 		if (token.kind == T_LBRACKET) {
 			leafNode.val().variantTypeParamsLeafN = variantTypeParams();
 		}
@@ -973,8 +960,8 @@ public class fParser {
 	}
 
 	void classDef(ProdArgs a, boolean isCase) {
-		ClassDefLeafNode leafNode = new ClassDefLeafNode(a.lastOpN, token);
-		setRightLeafProlog(a, T_CLASS, leafNode);
+		ClassDefLeafNode leafNode = new ClassDefLeafNode(a.lastOpN, accept(T_CLASS));
+		setRightLeaf(a, leafNode);
 
 		accept(T_ID);
 		leafNode.val().className = prevToken.name();
@@ -1007,31 +994,12 @@ public class fParser {
 	}
 
 	void objectDef(ProdArgs a, boolean isCase) {
-		ObjectDefLeafNode leafNode = new ObjectDefLeafNode(a.lastOpN, token);
-		setRightLeafProlog(a, T_OBJECT, leafNode);
+		ObjectDefLeafNode leafNode = new ObjectDefLeafNode(a.lastOpN, accept(T_OBJECT));
+		setRightLeaf(a, leafNode);
 		accept(T_ID);
 		leafNode.val().objectName = prevToken.name();
 		leafNode.val().isCase = isCase;
 	}
-
-//	List<String> ids() {
-//		List<String> ids = new ArrayList<>();
-//		ids.add(accept(T_ID).name());
-//		while (token.kind == T_COMMA) {
-//			next();
-//			ids.add(accept(T_ID).name());
-//		}
-//		return ids;
-//	}
-//
-//	void varValDcl(ProdArgs a, fVariable.StoreType storeType) {
-//		VarValDclLeafNode leafNode = new VarValDclLeafNode(a.lastOpN, token);
-//		leafNode.val().storeType = storeType;
-//		leafNode.val().ids = ids();
-//		acceptOpChar(OpChar.COLON);
-//		leafNode.val().typeLeafN = typeProd();
-//	}
-
 
 	void templateStatProdLoop(ProdArgs a) {
 		accept(T_LCURL);
@@ -1282,8 +1250,8 @@ public class fParser {
 
 	void caseClassesCase(ProdArgs a) {
 
-		CaseKwLeafNode leafNode = new CaseKwLeafNode(a.lastOpN, token);
-		setRightLeafProlog(a, T_CASE, leafNode);
+		CaseKwLeafNode leafNode = new CaseKwLeafNode(a.lastOpN, accept(T_CASE));
+		setRightLeaf(a, leafNode);
 
 		leafNode.val().patternLeafN = pattern();
 		if (token.kind == T_IF) {
@@ -1500,8 +1468,8 @@ public class fParser {
 	}
 
 	private void importDef(ProdArgs a) {
-		ImportDefLeafNode leafNode = new ImportDefLeafNode(a.lastOpN, token);
-		setRightLeafProlog(a, T_IMPORT, leafNode);
+		ImportDefLeafNode leafNode = new ImportDefLeafNode(a.lastOpN, accept(T_IMPORT));
+		setRightLeaf(a, leafNode);
 		accept(T_ID);
 		leafNode.val().importPath = prevToken.name();
 	}
@@ -1537,20 +1505,15 @@ public class fParser {
 		return new ProdRootLeafN(null, a.lastOpN);
 	}
 
-	private void setRightLeafProlog(ProdArgs a, fTokenKind accKind, CommonLeafNode leafNode) {
-		accept(accKind);
-		setRightLeaf(a, leafNode);
-	}
-
-	private void addIdLeaf(ProdArgs a, fTokenKind... expectTypes) {
-		addIdLeaf(a, new IdLeafNode(a.lastOpN, accept(T_ID)), expectTypes);
+	private void addRightIdLeaf(ProdArgs a, fTokenKind... expectTypes) {
+		setRLeaf(a, new IdLeafNode(a.lastOpN, accept(T_ID)), expectTypes);
 	}
 
 	private void setRightLeaf(ProdArgs a, CommonLeafNode n) {
-		addIdLeaf(a, n, null);
+		setRLeaf(a, n, null);
 	}
 
-	private void addIdLeaf(ProdArgs a, CommonLeafNode n, fTokenKind... expectTypes) {
+	private void setRLeaf(ProdArgs a, CommonLeafNode n, fTokenKind... expectTypes) {
 		assert a.lastOpN.right() == null;
 		a.lastOpN.setRight(n);
 		a.prevNKind = fTreeNKind.N_ID_LEAF;
