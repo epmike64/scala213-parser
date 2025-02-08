@@ -850,16 +850,16 @@ public class fParser {
 		return null;
 	}
 
-	void funDcl(ProdArgs a) {
-		FunDclDefLeafNode leafNode = new FunDclDefLeafNode(a.lastOpN, token);
-		setRightLeafProlog(a, T_DEF, leafNode);
-		leafNode.val().defDcl = DCL;
-		leafNode.val().funSigLeafN = funSig();
-		if (isAssignOpT(0)) {
-			next();
-			leafNode.val().funSigTypeLeafN = typeProd();
-		}
-	}
+//	void funDcl(ProdArgs a) {
+//		FunDclDefLeafNode leafNode = new FunDclDefLeafNode(a.lastOpN, token);
+//		setRightLeafProlog(a, T_DEF, leafNode);
+//		leafNode.val().defDcl = DCL;
+//		leafNode.val().funSigLeafN = funSig();
+//		if (isAssignOpT(0)) {
+//			next();
+//			leafNode.val().funSigTypeLeafN = typeProd();
+//		}
+//	}
 
 	void funDef(ProdArgs a) {
 		FunDclDefLeafNode leafNode = new FunDclDefLeafNode(a.lastOpN, token);
@@ -895,29 +895,32 @@ public class fParser {
 	}
 
 	private void typeDef(ProdArgs a) {
-		TypeDefDclLeafNode leafNode = new TypeDefDclLeafNode(a.lastOpN, token);
-		leafNode.val().defDcl = fVariable.DefDcl.DEF;
-		setRightLeafProlog(a, T_TYPE, leafNode);
+		TypeDefDclLeafNode leafNode = new TypeDefDclLeafNode(a.lastOpN, accept(T_TYPE));
+		setRightLeaf(a, leafNode);
+
 		leafNode.val().typeName = accept(T_ID).name();
 		if (token.kind == T_LBRACKET) {
 			leafNode.val().variantTypeParamsLeafN = variantTypeParams();
 		}
-		acceptOpChar(OpChar.ASSIGN);
-		leafNode.val().defTypeLeafN = typeProd();
+
+		if(isAssignOpT(0)) {
+
+			leafNode.val().defDcl = fVariable.DefDcl.DEF;
+			next();
+			leafNode.val().defTypeLeafN = typeProd();
+
+		} else {
+
+			leafNode.val().defDcl = fVariable.DefDcl.DCL;
+			if (token.kind == T_LOWER_BOUND) {
+				leafNode.val().dclLowerTypeLeafN = typeProd();
+			}
+			if (token.kind == T_UPPER_BOUND) {
+				leafNode.val().dclUpperTypeLeafN = typeProd();
+			}
+		}
 	}
 
-	private void typeDcl(ProdArgs a) {
-		TypeDefDclLeafNode leafNode = new TypeDefDclLeafNode(a.lastOpN, token);
-		leafNode.val().defDcl = DCL;
-		setRightLeafProlog(a, T_TYPE, leafNode);
-		leafNode.val().typeName = accept(T_ID).name();
-		if (token.kind == T_LOWER_BOUND) {
-			leafNode.val().dclLowerTypeLeafN = typeProd();
-		}
-		if (token.kind == T_UPPER_BOUND) {
-			leafNode.val().dclUpperTypeLeafN = typeProd();
-		}
-	}
 
 	private void traitDef(ProdArgs a) {
 		TraitDefLeafNode leafNode = new TraitDefLeafNode(a.lastOpN, token);
@@ -1060,12 +1063,12 @@ public class fParser {
 				}
 
 				case T_DEF: {
-					funDcl(a);
+					funDef(a);
 					break;
 				}
 
 				case T_TYPE: {
-					typeDcl(a);
+					typeDef(a);
 					break;
 				}
 
