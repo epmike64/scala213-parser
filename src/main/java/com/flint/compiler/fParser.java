@@ -9,10 +9,12 @@ import com.flint.compiler.tree.leaves.nodes.*;
 import com.flint.compiler.tree.operators.nodes.*;
 import com.flint.compiler.tree.operators.values.OperatorValue;
 
-import java.util.ArrayList;
-import java.util.List;
+
 
 import static com.flint.compiler.token.fTokenKind.*;
+import static com.flint.compiler.token.fVariable.DefDcl.*;
+import static com.flint.compiler.token.fVariable.StoreType.VAL;
+import static com.flint.compiler.token.fVariable.StoreType.VAR;
 import static com.flint.compiler.tree.operators.nodes.ProdRootOp.BLOCK_PRD;
 import static com.flint.compiler.tree.operators.nodes.ProdRootOp.CONSTR_BLOCK_PRD;
 
@@ -643,35 +645,22 @@ public class fParser {
 		return commonProd(ProdRootOp.PATTERN1_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
-	void varDef(ProdArgs a) {
-		accept(T_VAR);
-		patDef(a);
-	}
-
-	void patDef(ProdArgs a) {
+	void patDef(ProdArgs a, fVariable.DefDcl defDcl, fVariable.StoreType storeType) {
 
 		PatDefLeafNode leafNode = new PatDefLeafNode(a.lastOpN, token);
-		setRightLeafProlog(a, T_VAL, leafNode);
+		leafNode.val().defDcl = defDcl;
+		leafNode.val().storeType = storeType;
+		fTokenKind k = storeType == VAL ? T_VAL: T_VAR;
+		setRightLeafProlog(a, k, leafNode);
 
 		leafNode.val().pattern2sLeafN = pattern2s();
 		if (isColonOpT(0)) {
 			next();
 			leafNode.val().typeLeafN = typeProd();
 		}
-		acceptOpChar(OpChar.ASSIGN);
-		leafNode.val().exprLeafN = expressionProd();
-		switch (getPrevNKind(a, fTreeNKind.N_ID_LEAF)) {
-			case N_ROOT: {
-				// ROOT="val x"
-				prodFirstCommonLeaf(a, leafNode, false, 0, T_ID, T_SEMI, T_NL);
-				break;
-			}
-			case N_ID_OPERATOR: {
-				prodRightCommonLeaf(a, leafNode, false, 0, T_ID, T_SEMI, T_NL);
-				break;
-			}
-			default:
-				throw new RuntimeException("Unexpected Previous  NodeKind: " + a.prevNKind);
+		if(isAssignOpT(0)) {
+			next();
+			leafNode.val().exprLeafN = expressionProd();
 		}
 	}
 
@@ -828,10 +817,10 @@ public class fParser {
 		//add Modifiers
 		switch (token.kind) {
 			case T_VAL:
-				leafNode.val().storeType = fVariable.StoreType.VAL;
+				leafNode.val().storeType = VAL;
 				next();
 			case T_VAR:
-				leafNode.val().storeType = fVariable.StoreType.VAR;
+				leafNode.val().storeType = VAR;
 				next();
 				break;
 			default:
@@ -921,7 +910,7 @@ public class fParser {
 	void funDcl(ProdArgs a) {
 		FunDclDefLeafNode leafNode = new FunDclDefLeafNode(a.lastOpN, token);
 		setRightLeafProlog(a, T_DEF, leafNode);
-		leafNode.val().defDcl = fVariable.DefDcl.DCL;
+		leafNode.val().defDcl = DCL;
 		leafNode.val().funSigLeafN = funSig();
 		if(isAssignOpT(0)) {
 			next();
@@ -976,7 +965,7 @@ public class fParser {
 
 	private void typeDcl(ProdArgs a) {
 		TypeDefDclLeafNode leafNode = new TypeDefDclLeafNode(a.lastOpN, token);
-		leafNode.val().defDcl = fVariable.DefDcl.DCL;
+		leafNode.val().defDcl = DCL;
 		setRightLeafProlog(a, T_TYPE, leafNode);
 		leafNode.val().typeName = accept(T_ID).name();
 		if(token.kind == T_LOWER_BOUND){
@@ -1077,23 +1066,23 @@ public class fParser {
 		leafNode.val().isCase = isCase;
 	}
 
-	List<String> ids() {
-		List<String> ids = new ArrayList<>();
-		ids.add(accept(T_ID).name());
-		while (token.kind == T_COMMA) {
-			next();
-			ids.add(accept(T_ID).name());
-		}
-		return ids;
-	}
-
-	void varValDcl(ProdArgs a, fVariable.StoreType storeType) {
-		VarValDclLeafNode leafNode = new VarValDclLeafNode(a.lastOpN, token);
-		leafNode.val().storeType = storeType;
-		leafNode.val().ids = ids();
-		acceptOpChar(OpChar.COLON);
-		leafNode.val().typeLeafN = typeProd();
-	}
+//	List<String> ids() {
+//		List<String> ids = new ArrayList<>();
+//		ids.add(accept(T_ID).name());
+//		while (token.kind == T_COMMA) {
+//			next();
+//			ids.add(accept(T_ID).name());
+//		}
+//		return ids;
+//	}
+//
+//	void varValDcl(ProdArgs a, fVariable.StoreType storeType) {
+//		VarValDclLeafNode leafNode = new VarValDclLeafNode(a.lastOpN, token);
+//		leafNode.val().storeType = storeType;
+//		leafNode.val().ids = ids();
+//		acceptOpChar(OpChar.COLON);
+//		leafNode.val().typeLeafN = typeProd();
+//	}
 
 
 	void templateStatProdLoop(ProdArgs a) {
@@ -1116,11 +1105,11 @@ public class fParser {
 				}
 
 				case T_VAL: {
-					varValDcl(a, fVariable.StoreType.VAL);
+					patDef(a, DEF_DCL, VAL);
 					break;
 				}
 				case T_VAR: {
-					varValDcl(a, fVariable.StoreType.VAR);
+					patDef(a, DEF_DCL, VAR);
 					break;
 				}
 
@@ -1174,11 +1163,11 @@ public class fParser {
 					break;
 
 				case T_VAL: {
-					patDef(a);
+					patDef(a, DEF, VAL);
 					break;
 				}
 				case T_VAR: {
-					varDef(a);
+					patDef(a, DEF, VAR);
 					break;
 				}
 

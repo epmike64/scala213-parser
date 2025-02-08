@@ -5,6 +5,6 @@ public class fVariable {
 		TEMP, VAL, VAR
 	}
 	public enum DefDcl {
-		DEF, DCL
+		DEF, DCL, DEF_DCL
 	}
 }
