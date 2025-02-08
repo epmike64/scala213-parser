@@ -32,7 +32,8 @@ public interface fTree {
 		N_TYPE_LEAF,
 		N_FAT_ARROW,
 
-		N_VAR_VAL_DCL_LEAF
+		N_VAR_VAL_DCL_LEAF,
+		N_ID_TYPED_LEAF
 	}
 
 	/**
