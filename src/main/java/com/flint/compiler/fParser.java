@@ -152,8 +152,8 @@ public class fParser {
 		return count;
 	}
 
-	void skipSemi() {
-		while (token.kind == fTokenKind.T_SEMI) {
+	void skipNL() {
+		while (token.kind == T_NL) {
 			next();
 		}
 	}
@@ -555,27 +555,27 @@ public class fParser {
 	}
 
 
-	private void postfixExprLCurl(ProdArgs a) {
-		accept(T_LCURL);
-		if (token.kind != T_RCURL) {
-			switch (a.prevNKind) {
-				case N_ROOT: {
-					switch (token.kind) {
-						case T_CASE: {
-							a.lastOpN.setRight(caseClassesProd());
-							break;
-						}
-						default: {
-							a.lastOpN.setRight(blockProd());
-						}
-					}
-				}
-				default:
-					throw new RuntimeException("Unexpected prev NodeKind: " + a.prevNKind);
-			}
-		}
-		accept(T_RCURL);
-	}
+//	private void postfixExprLCurl(ProdArgs a) {
+//		accept(T_LCURL);
+//		if (token.kind != T_RCURL) {
+//			switch (a.prevNKind) {
+//				case N_ROOT: {
+//					switch (token.kind) {
+//						case T_CASE: {
+//							a.lastOpN.setRight(caseClassesProd());
+//							break;
+//						}
+//						default: {
+//							a.lastOpN.setRight(blockProd());
+//						}
+//					}
+//				}
+//				default:
+//					throw new RuntimeException("Unexpected prev NodeKind: " + a.prevNKind);
+//			}
+//		}
+//		accept(T_RCURL);
+//	}
 
 
 	private ProdRootLeafN postfixExprProd() {
@@ -857,21 +857,13 @@ public class fParser {
 	}
 
 	ProdRootLeafN blockExpr() {
-		accept(T_LCURL);
-		ProdRootLeafN v;
-		switch (token.kind) {
-			case T_CASE: {
-				v = caseClassesProd();
-				break;
-			}
-			default: {
-				v = blockProd();
-				break;
-			}
+		expectOneOf(0, T_LCURL);
+		if(isLa(0, T_CASE)) {
+			return caseClassesProd();
 		}
-		accept(T_RCURL);
-		return v;
+		return blockProd();
 	}
+
 
 	ProdRootLeafN argumentExprs() {
 		switch (token.kind) {
@@ -922,12 +914,16 @@ public class fParser {
 		switch (token.kind) {
 			case T_ID:
 				leafNode.val().funSigLeafN = funSig();
-				if (isAssignOpT(0)) {
+				if(isColonOpT(0)){
 					next();
 					leafNode.val().funSigTypeLeafN = typeProd();
 					acceptOpChar(OpChar.ASSIGN);
 					leafNode.val().funSigExprLeafN = expressionProd();
+				} else if(isAssignOpT(0)) {
+					next();
+					leafNode.val().funSigExprLeafN = expressionProd();
 				} else {
+					skipNL();
 					leafNode.val().funSigBlockLeafN = blockProd();
 				}
 				break;
@@ -1220,21 +1216,14 @@ public class fParser {
 		accept(T_RCURL);
 	}
 
-	void blockExprProdLoop(ProdArgs a) {
-
-		switch (token.kind) {
-			case T_CASE: {
-				a.lastOpN.setRight(caseClassesProd());
-				break;
-			}
-			case T_RCURL: {
-				break;
-			}
-			default: {
-				a.lastOpN.setRight(blockProd());
-			}
-		}
-	}
+//	void blockExpr(ProdArgs a) {
+//		expectOneOf(0, T_LCURL);
+//		if(isLa(0, T_CASE)){
+//			a.lastOpN.setRight(caseClassesProd());
+//		} else {
+//			a.lastOpN.setRight(blockProd());
+//		}
+//	}
 
 	void pattern3LParen(ProdArgs a) {
 		switch (a.prevNKind) {
@@ -1289,6 +1278,9 @@ public class fParser {
 			a.isContinue = false;
 			switch (token.kind) {
 				case T_ID: {
+					if(isAssignOpT(0)){
+						break loop;
+					}
 					typeTID(a);
 					assert a.isContinue == true;
 					continue;
@@ -1332,34 +1324,40 @@ public class fParser {
 	}
 
 	void caseClassesProdLoop(ProdArgs a) {
+		accept(T_LCURL);
 		loop:
 		while (true) {
-			a.isContinue = false;
 			switch (token.kind) {
 				case T_CASE: {
 					caseClassesCase(a);
+					insertSemiOp(a);
 					continue;
 				}
 				case T_RCURL:
-				default:
 					break loop;
+				default:
+					throw new RuntimeException("Unexpected token: " + token.kind);
 			}
 		}
+		accept(T_RCURL);
 	}
 
-	void postfixExprProdLoop(ProdArgs a) {
+	void postfixExprProd(ProdArgs a) {
 
 		switch (token.kind) {
 			case T_NEW:
 				postfixExprNew(a);
 				break;
 			case T_LCURL:
-				postfixExprLCurl(a);
+				if(isLa(0, T_CASE)) {
+					a.lastOpN.setRight(caseClassesProd());
+				} else {
+					a.lastOpN.setRight(blockProd());
+				}
 				break;
 			default:
 				break;
 		}
-
 	}
 
 	void expressionProdLoop(ProdArgs a) {
@@ -1445,14 +1443,12 @@ public class fParser {
 				expressionProdLoop(a);
 				break;
 			case POSTFIX_EXPR_PRD:
-				postfixExprProdLoop(a);
+				postfixExprProd(a);
 				break;
 			case TYPE_PRD:
 				typeProdLoop(a);
 				break;
-			case BLOCK_EXPR_PRD:
-				blockExprProdLoop(a);
-				break;
+
 			case CASE_CLASSES_PRD:
 				caseClassesProdLoop(a);
 				break;
