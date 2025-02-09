@@ -195,7 +195,7 @@ public class fParser {
 			case N_ROOT: {
 				// SimplePatternA {OP SimplePatternB }
 				// x="SimplePatternA"
-				setRLeaf(a, parseIdTyped(a), T_ID, T_LPAREN, T_RPAREN, T_SEMI, T_NL);
+				setRootRightLeaf(a, parseIdTyped(a), T_ID, T_LPAREN, T_RPAREN, T_SEMI, T_NL);
 				a.isContinue = true;
 				return;
 			}
@@ -211,7 +211,7 @@ public class fParser {
 			case N_ID_OPERATOR: {
 				// SimplePatternA {OP SimplePatternB }
 				// x="SimplePatternB"
-				setRLeaf(a, parseIdTyped(a), T_ID, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL);
+				setRightLeaf(a, parseIdTyped(a), T_ID, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL);
 				a.isContinue = true;
 				return;
 			}
@@ -224,7 +224,7 @@ public class fParser {
 		switch (a.prevNKind) {
 			case N_ROOT: {
 				// ROOT=": x"
-				addRightIdLeaf(a, T_COMMA, T_ID, T_LBRACKET, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL);
+				addRootRightIdLeaf(a, T_COMMA, T_ID, T_LBRACKET, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL);
 				a.isContinue = true;
 				return;
 			}
@@ -239,7 +239,7 @@ public class fParser {
 			case N_ROOT: {
 				// ID_LEAF="x"
 				// Prefix Operator not implemented
-				addRightIdLeaf(a, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_ELSE, T_FAT_ARROW, T_SEMI, T_NL);
+				addRootRightIdLeaf(a, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_ELSE, T_FAT_ARROW, T_SEMI, T_NL);
 				a.isContinue = true;
 				return;
 			}
@@ -345,8 +345,7 @@ public class fParser {
 	private ProdRootLeafN exprs(ProdRootLeafN rootLeaf) {
 		rootLeaf = expressionProd(rootLeaf, fTreeNKind.N_ID_LEAF, null);
 		while (token.kind == T_COMMA) {
-			next();
-			rootLeaf = expressionProd(rootLeaf, fTreeNKind.N_ID_OPERATOR, prevToken);
+			rootLeaf = expressionProd(rootLeaf, fTreeNKind.N_ID_OPERATOR, next());
 		}
 		return rootLeaf;
 	}
@@ -354,8 +353,7 @@ public class fParser {
 	private ProdRootLeafN types(ProdRootLeafN rootLeaf) {
 		rootLeaf = typeProd(rootLeaf, fTreeNKind.N_ID_LEAF, null);
 		while (token.kind == T_COMMA) {
-			next();
-			rootLeaf = typeProd(rootLeaf, fTreeNKind.N_ID_OPERATOR, prevToken);
+			rootLeaf = typeProd(rootLeaf, fTreeNKind.N_ID_OPERATOR, next());
 		}
 		return rootLeaf;
 	}
@@ -725,8 +723,7 @@ public class fParser {
 		ProdArgs a = initRootNodeProlog(ProdRootOp.CLASS_PARAMS_PRD);
 		classParam(a);
 		while (token.kind == T_COMMA) {
-			next();
-			insertCommaOp(a, prevToken);
+			insertCommaOp(a, next());
 			classParam(a);
 		}
 		accept(T_RPAREN);
@@ -768,8 +765,7 @@ public class fParser {
 			default:
 				break;
 		}
-		accept(T_ID);
-		leafNode.val().paramName = prevToken.name();
+		leafNode.val().paramName = accept(T_ID).name();
 		acceptOpChar(OpChar.COLON);
 		leafNode.val().paramTypeLeafN = typeProd();
 		if (isAssignOpT(0)) {
@@ -962,9 +958,7 @@ public class fParser {
 	void classDef(ProdArgs a, boolean isCase) {
 		ClassDefLeafNode leafNode = new ClassDefLeafNode(a.lastOpN, accept(T_CLASS));
 		setRightLeaf(a, leafNode);
-
-		accept(T_ID);
-		leafNode.val().className = prevToken.name();
+		leafNode.val().className = accept(T_ID).name();
 		leafNode.val().isCase = isCase;
 		if (token.kind == T_LBRACKET) {
 			leafNode.val().typeParamsLeafN = variantTypeParams();
@@ -1505,15 +1499,24 @@ public class fParser {
 		return new ProdRootLeafN(null, a.lastOpN);
 	}
 
+	private void addRootRightIdLeaf(ProdArgs a, fTokenKind... expectTypes) {
+		assert a.prevNKind == fTreeNKind.N_ROOT;
+		addRightIdLeaf(a, expectTypes);
+	}
+
 	private void addRightIdLeaf(ProdArgs a, fTokenKind... expectTypes) {
-		setRLeaf(a, new IdLeafNode(a.lastOpN, accept(T_ID)), expectTypes);
+		setRightLeaf(a, new IdLeafNode(a.lastOpN, accept(T_ID)), expectTypes);
 	}
 
 	private void setRightLeaf(ProdArgs a, CommonLeafNode n) {
-		setRLeaf(a, n, null);
+		setRightLeaf(a, n, null);
 	}
 
-	private void setRLeaf(ProdArgs a, CommonLeafNode n, fTokenKind... expectTypes) {
+	private void setRootRightLeaf(ProdArgs a, CommonLeafNode n, fTokenKind... expectTypes) {
+		assert a.prevNKind == fTreeNKind.N_ROOT;
+		setRightLeaf(a, n, expectTypes);
+	}
+	private void setRightLeaf(ProdArgs a, CommonLeafNode n, fTokenKind... expectTypes) {
 		assert a.lastOpN.right() == null;
 		a.lastOpN.setRight(n);
 		a.prevNKind = fTreeNKind.N_ID_LEAF;
