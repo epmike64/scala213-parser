@@ -112,12 +112,15 @@ public class fParser {
 		throw new AssertionError("Expected operator but found " + token.kind);
 	}
 
+	private boolean isLaIdOpChar(int la, OpChar... ops) {
+		return isLaOpChar(la, T_ID, ops);
+	}
+
 	private boolean isLaOpChar(int la, fTokenKind tk, OpChar... ops) {
 		fToken laTok = lookAhead(la);
-		if (laTok.kind == tk && laTok.name().length() == 1) {
-			char ch = laTok.name().charAt(0);
+		if(laTok.kind == tk && laTok.opChar() != OpChar.INVALID) {
 			for (OpChar op : ops) {
-				if (ch == op.opchar) {
+				if (laTok.opChar() == op) {
 					return true;
 				}
 			}
@@ -181,24 +184,52 @@ public class fParser {
 		return temp;
 	}
 
-	private IdTypedLeafNode parseIdTyped(ProdArgs a) {
+	private IdTypedLeafNode idTyped(ProdArgs a) {
 		IdTypedLeafNode idTypedLeafNode = new IdTypedLeafNode(a.lastOpN, accept(T_ID));
-		if (isColonOpT(0)) {
-			next();
-			idTypedLeafNode.val().typeLeafN = typeProd();
-		}
+		acceptOpChar(OpChar.COLON);
+		idTypedLeafNode.val().typeLeafN = typeProd();
 		return idTypedLeafNode;
 	}
+
+	private IdAtPattern3LeafNode idAtPattern3(ProdArgs a) {
+		IdAtPattern3LeafNode n = new IdAtPattern3LeafNode(a.lastOpN, accept(T_ID));
+		acceptOpChar(OpChar.AT);
+		n.val().pattern3LeafN = pattern3();
+		return n;
+	}
+
+	private IdParenWrapPatternsLeafNode idParenWrapPatterns(ProdArgs a) {
+		IdParenWrapPatternsLeafNode n = new IdParenWrapPatternsLeafNode(a.lastOpN, accept(T_ID));
+		accept(T_LPAREN);
+		n.val().patternsLeafN = patterns();
+		accept(T_RPAREN);
+		return n;
+	}
+
 
 	private void pattern1TID(ProdArgs a) {
 		switch (a.prevNKind) {
 			case N_ROOT: {
-				// SimplePatternA {OP SimplePatternB }
-				// x="SimplePatternA"
-				setRootRightLeaf(a, parseIdTyped(a), T_ID, T_LPAREN, T_RPAREN, T_SEMI, T_NL);
-				a.isContinue = true;
+				fTokenKind[] expect = expect2Array(T_ID, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL);
+				a.isContinue = false;
+				if(isLaIdOpChar(1, OpChar.COLON)) {
+					// x="SimplePatternA : Type"
+					setRootRightLeaf(a, idTyped(a), expect);
+
+				} else if(isLaIdOpChar(1, OpChar.AT)) {
+					// x="SimplePatternA @ Pattern3"
+					setRootRightLeaf(a, idAtPattern3(a), expect);
+
+				} else if(isLa(1, T_LPAREN)) {
+
+				} else {
+					// SimplePatternA
+					addRightIdLeaf(a, expect);
+					a.isContinue = true;
+				}
 				return;
 			}
+
 			case N_ID_LEAF: {
 				// SimplePattern {OP SimplePattern}
 				// x="OP"
@@ -211,7 +242,7 @@ public class fParser {
 			case N_ID_OPERATOR: {
 				// SimplePatternA {OP SimplePatternB }
 				// x="SimplePatternB"
-				setRightLeaf(a, parseIdTyped(a), T_ID, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL);
+				addRightIdLeaf(a, T_ID, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL);
 				a.isContinue = true;
 				return;
 			}
@@ -320,24 +351,28 @@ public class fParser {
 		}
 	}
 
+	private ProdRootLeafN patterns() {
+		ProdArgs a = initRootNodeProlog(ProdRootOp.PATTERNS_PRD);
+		setRightLeaf(a, pattern());
+		while (token.kind == T_COMMA) {
+			insertCommaOp(a, next());
+			setRightLeaf(a, pattern());
+		}
+		return prodRootLeafN(a);
+	}
+
 	private ProdRootLeafN pattern() {
 		ProdRootLeafN rootLeaf = pattern1Prod();
 		while (isPipeOpT(0)) {
-			next();
-			rootLeaf = pattern1Prod(rootLeaf, fTreeNKind.N_ID_OPERATOR, prevToken);
+			rootLeaf = pattern1Prod(rootLeaf, fTreeNKind.N_ID_OPERATOR, next());
 		}
 		return rootLeaf;
 	}
 
-	private ProdRootLeafN pattern2() {
-		throw new RuntimeException("Not implemented");
-	}
-
 	private ProdRootLeafN pattern2s() {
-		ProdRootLeafN rootLeaf = pattern2();
+		ProdRootLeafN rootLeaf = pattern2Prod();
 		while (token.kind == T_COMMA) {
-			next();
-			//rootLeaf = pattern2(rootLeaf, fTreeNKind.N_ID_OPERATOR, prevToken);
+			rootLeaf = pattern2Prod(rootLeaf, fTreeNKind.N_ID_OPERATOR, next());
 		}
 		return rootLeaf;
 	}
@@ -578,12 +613,20 @@ public class fParser {
 		return commonProd(ProdRootOp.TEMPLATE_BODY_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
+	private ProdRootLeafN pattern2Prod() {
+		return pattern2Prod(null, null, null);
+	}
+
 	private ProdRootLeafN pattern1Prod() {
 		return pattern1Prod(null, null, null);
 	}
 
 	private ProdRootLeafN pattern1Prod(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
 		return commonProd(ProdRootOp.PATTERN1_PRD, wrapSubExpr, prevNKind, opToken);
+	}
+
+	private ProdRootLeafN pattern2Prod(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+		return commonProd(ProdRootOp.PATTERN2_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
 	void patDef(ProdArgs a, fVariable.DefDcl defDcl, fVariable.StoreType storeType) {
@@ -1168,19 +1211,26 @@ public class fParser {
 
 	void pattern1LParen(ProdArgs a) {
 		switch (a.prevNKind) {
-			case N_ID_LEAF: {
+			case N_ROOT: case N_ID_LEAF: {
 				accept(T_LPAREN);
-				assert a.lastOpN.right() == null;
-				ConstrPatternLeafNode constrPatternLeafNode = new ConstrPatternLeafNode(a.lastOpN, prevToken);
-				constrPatternLeafNode.val().patternLeafN = pattern();
-				a.lastOpN.setRight(constrPatternLeafNode);
+				if(token.kind != T_RPAREN) {
+					assert a.lastOpN.right() == null;
+					IdParenWrapPatternsLeafNode n = new IdParenWrapPatternsLeafNode(a.lastOpN, prevToken);
+					setRightLeaf(a, n);
+					n.val().patternLeafN = patterns();
+				}
 				accept(T_RPAREN);
-				expectOneOf(0, T_ID, T_SEMI, T_NL);
+				expectOneOf(0, T_ID, T_COMMA, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL);
+				a.isContinue = true;
+				return;
 			}
 			default:
 				throw new RuntimeException("Unexpected token: " + token.kind);
 		}
 	}
+   void pattern2ProdLoop(ProdArgs a) {
+		throw new RuntimeException("Not implemented yet");
+   }
 
 	void pattern1ProdLoop(ProdArgs a) {
 		loop:
@@ -1398,6 +1448,10 @@ public class fParser {
 			case PATTERN1_PRD:
 				pattern1ProdLoop(a);
 				break;
+
+			case PATTERN2_PRD:
+				pattern2ProdLoop(a);
+				break;
 			default:
 				throw new RuntimeException("Unexpected ProdRootOp: " + prodRootOp);
 		}
@@ -1523,6 +1577,10 @@ public class fParser {
 		if (expectTypes != null) {
 			expectOneOf(0, expectTypes);
 		}
+	}
+
+	private fTokenKind[] expect2Array(fTokenKind... expectTypes) {
+		return expectTypes;
 	}
 
 	private void prodLocalRootIdOp(ProdArgs a) {

@@ -83,15 +83,15 @@ public class BinaryTreeMaker {
 				return addFunDcl((FunDclDefLeafNode)n);
 			case N_CASE_KW_LEAF:
 				return addCaseKw((CaseKwLeafNode)n);
-			case N_CONSTR_PATTERN_LEAF:
-				return addConstrPattern((ConstrPatternLeafNode)n);
+			case N_ID_PAREN_WRAP_PATTERNS_LEAF:
+				return addConstrPattern((IdParenWrapPatternsLeafNode)n);
 			default:
 				throw new UnsupportedOperationException();
 		}
 	}
 
 
-	Node addConstrPattern(ConstrPatternLeafNode n) {
+	Node addConstrPattern(IdParenWrapPatternsLeafNode n) {
 
 		Node left = addNode(n.val().patternLeafN);
 		Node right = null;//addNode(n.val().exprLeafN);
