@@ -93,7 +93,7 @@ public class BinaryTreeMaker {
 
 	Node addConstrPattern(IdParenWrapPatternsLeafNode n) {
 
-		Node left = addNode(n.val().patternLeafN);
+		Node left = addNode(n.val().patternsLeafN);
 		Node right = null;//addNode(n.val().exprLeafN);
 		return new Node("Constr Pattern", left, right);
 	}
