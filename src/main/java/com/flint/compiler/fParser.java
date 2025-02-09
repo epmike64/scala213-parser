@@ -766,13 +766,12 @@ public class fParser {
 
 	ProdRootLeafN paramClause() {
 		accept(T_LPAREN);
-		if (token.kind == T_RPAREN) {
-			accept(T_RPAREN);
-			return null;
+		ProdRootLeafN ps = null;
+		if(token.kind != T_RPAREN) {
+			ps = params();
 		}
-		ProdRootLeafN params = params();
 		accept(T_RPAREN);
-		return params;
+		return ps;
 	}
 
 	ProdRootLeafN params() {
@@ -807,8 +806,7 @@ public class fParser {
 
 		ParamLeafNode leafNode = new ParamLeafNode(a.lastOpN, token);
 		setRightLeaf(a, leafNode);
-		accept(T_ID);
-		leafNode.val().paramName = prevToken.name();
+		leafNode.val().paramName = accept(T_ID).name();
 		leafNode.val().isImplicit = isImplicit;
 
 		if (isColonOpT(0)) {
