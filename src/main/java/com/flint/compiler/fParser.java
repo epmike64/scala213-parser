@@ -153,6 +153,12 @@ public class fParser {
 		return count;
 	}
 
+	void skimSemi() {
+		while (token.kind == T_SEMI || token.kind == T_NL) {
+			next();
+		}
+	}
+
 	void skipNL() {
 		while (token.kind == T_NL) {
 			next();
@@ -337,20 +343,20 @@ public class fParser {
 		switch (getPrevNKind(a, fTreeNKind.N_IF_KW_LEAF)) {
 			case N_ROOT:
 			case N_ID_OPERATOR: {
-				IfKwLeafNode ifLeafNode = new IfKwLeafNode(a.lastOpN, token);
-				assert a.lastOpN.right() == null;
-				a.lastOpN.setRight(ifLeafNode);
-				next();
+				IfKwLeafNode ifLeafN = new IfKwLeafNode(a.lastOpN, accept(T_IF));
 				accept(T_LPAREN);
-				ifLeafNode.val().ifCondLeafN = expressionProd();
+				ifLeafN.val().ifCondLeafN = expressionProd();
 				accept(T_RPAREN);
-				ifLeafNode.val().ifBodyLeafN = expressionProd();
+				skipNL();
+				ifLeafN.val().ifBodyLeafN = expressionProd();
 				if (token.kind == T_ELSE) {
-					ElseKwLeafNode elseLeafNode = new ElseKwLeafNode(a.lastOpN, token);
-					next();
-					a.lastOpN.setRight(elseLeafNode);
-					elseLeafNode.val().ifLeafN = ifLeafNode;
-					elseLeafNode.val().elseLeafN = expressionProd();
+					ElseKwLeafNode elseLeafN = new ElseKwLeafNode(a.lastOpN, accept(T_ELSE));
+					setRightLeaf(a, elseLeafN);
+					elseLeafN.val().ifLeafN = ifLeafN;
+					skimSemi();
+					elseLeafN.val().elseLeafN = expressionProd();
+				} else {
+					setRightLeaf(a, ifLeafN);
 				}
 				a.isContinue = true;
 				return;
@@ -361,7 +367,22 @@ public class fParser {
 	}
 
 	void expressionWhile(ProdArgs a) {
-		throw new RuntimeException("Not implemented");
+		switch (getPrevNKind(a, fTreeNKind.N_WHILE_KW_LEAF)) {
+			case N_ROOT:
+			case N_ID_OPERATOR: {
+				WhileKwLeafNode whileLeafN = new WhileKwLeafNode(a.lastOpN, accept(T_WHILE));
+				setRightLeaf(a, whileLeafN);
+				accept(T_LPAREN);
+				whileLeafN.val().whileCondLeafN = expressionProd();
+				accept(T_RPAREN);
+				skipNL();
+				whileLeafN.val().whileBodyLeafN = expressionProd();
+				a.isContinue = true;
+				return;
+			}
+			default:
+				throw new RuntimeException("Unexpected token: " + token.kind);
+		}
 	}
 
 	void expressionFor(ProdArgs a) {
@@ -534,7 +555,7 @@ public class fParser {
 				// "x: => type"
 				// "type, => type"
 				//  "funArgTypes => type"
-				a.lastOpN = insertOpNode(a.lastOpN, token);
+				insertOpNode(a, token);
 				next();
 				assert a.lastOpN.right() == null;
 				a.lastOpN.setRight(typeProd());
@@ -549,7 +570,7 @@ public class fParser {
 	private void expressionFatArrow(ProdArgs a) {
 		switch (getPrevNKind(a, fTreeNKind.N_FAT_ARROW)) {
 			case N_ID_LEAF: {
-				a.lastOpN = insertOpNode(a.lastOpN, token);
+				insertOpNode(a, token);
 				assert a.lastOpN.right() == null;
 				next();
 				a.lastOpN.setRight(expressionProd());
@@ -1583,15 +1604,6 @@ public class fParser {
 		return prodRootLeafN(a);
 	}
 
-	CommonOpNode insertOpNode(CommonOpNode lastOpN, fToken op_token) {
-		fOperatorKind k = getOperatorKind(op_token);
-		if (k.isRightAssociative || k.precedence() > lastOpN.precedence()) {
-			lastOpN = insertHigherPrecedenceOpNode(lastOpN, k, op_token);
-		} else {
-			lastOpN = insertLessOrEqualPrecedenceOpNode(lastOpN, k, op_token);
-		}
-		return lastOpN;
-	}
 
 	CommonOpNode insertLessOrEqualPrecedenceOpNode(CommonOpNode lastOpN, fOperatorKind k, fToken op_token) {
 		CommonOpNode lastOpParent = lastOpN.parent();
@@ -1643,14 +1655,19 @@ public class fParser {
 		leafNode.val().importPath = prevToken.name();
 	}
 
-//	private void prodLocalRootIdOp(ProdArgs a) {
-//		a.prevNKind = fTreeNKind.N_ID_OPERATOR;
-//		a.lastOpN = insertOpNode(a.lastOpN, token);
-//	}
+	CommonOpNode _insertOpNode(CommonOpNode lastOpN, fToken op_token) {
+		fOperatorKind k = getOperatorKind(op_token);
+		if (k.isRightAssociative || k.precedence() > lastOpN.precedence()) {
+			lastOpN = insertHigherPrecedenceOpNode(lastOpN, k, op_token);
+		} else {
+			lastOpN = insertLessOrEqualPrecedenceOpNode(lastOpN, k, op_token);
+		}
+		return lastOpN;
+	}
 
 	private void insertOpNode(ProdArgs a, fToken t) {
 		a.prevNKind = fTreeNKind.N_ID_OPERATOR;
-		a.lastOpN = insertOpNode(a.lastOpN, t);
+		a.lastOpN = _insertOpNode(a.lastOpN, t);
 	}
 
 	private void insertIdOp(ProdArgs a,  fToken t, fTokenKind... types) {
