@@ -1013,7 +1013,7 @@ public class fParser {
 					}
 					if (_localModifier(a)) continue;
 					if (_accessModifier(a)) continue;
-					break;
+					break loop;
 				}
 				default:
 					break loop;
