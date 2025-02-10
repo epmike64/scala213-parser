@@ -1106,7 +1106,7 @@ public class fParser {
 				case T_NL:
 				case T_SEMI: {
 					next();
-					continue;
+					break;
 				}
 
 				case T_RCURL:
@@ -1151,9 +1151,15 @@ public class fParser {
 					break;
 				}
 
+				case T_OVERRIDE: case T_PRIVATE: case T_PROTECTED: case T_ABSTRACT: case T_FINAL: case T_SEALED: case T_IMPLICIT: case T_LAZY: {
+					setRightLeaf(a, modifierProd(MODIFIER_PRD));
+					expectOneOf(0, T_VAL, T_VAR, T_DEF, T_TYPE,  T_CASE, T_CLASS, T_OBJECT, T_TRAIT);
+					continue ;
+				}
 				default:
 					throw new RuntimeException("Unexpected token: " + token.kind);
 			}
+			insertCommaOp(a);
 		}
 		accept(T_RCURL);
 	}
