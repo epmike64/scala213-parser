@@ -325,6 +325,7 @@ public class fParser {
 					return;
 				}
 				expectOneOf(0, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_ELSE, T_FAT_ARROW, T_SEMI, T_NL);
+				return;
 			}
 			default:
 				throw new RuntimeException("Unexpected Previous  NodeKind: " + a.prevNKind);
