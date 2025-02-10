@@ -6,7 +6,7 @@ import com.flint.compiler.token.fVariable.StoreType;
 
 public class ClassParamLeafValue extends TokenLeafValue {
 
-	//Modifiers
+	public ProdRootLeafN modifiersLeafN;
 	public String paramName;
 	public StoreType storeType = StoreType.TEMP;
 	public ProdRootLeafN paramTypeLeafN;

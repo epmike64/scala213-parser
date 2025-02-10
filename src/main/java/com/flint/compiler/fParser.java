@@ -810,7 +810,7 @@ public class fParser {
 
 		ClassParamLeafNode leafNode = new ClassParamLeafNode(a.lastOpN, token);
 		setRightLeaf(a, leafNode);
-		//add Modifiers
+		leafNode.val().modifiersLeafN = modifierProd(MODIFIER_PRD);
 		switch (token.kind) {
 			case T_VAL:
 				leafNode.val().storeType = VAL;
