@@ -566,29 +566,6 @@ public class fParser {
 	}
 
 
-//	private void postfixExprLCurl(ProdArgs a) {
-//		accept(T_LCURL);
-//		if (token.kind != T_RCURL) {
-//			switch (a.prevNKind) {
-//				case N_ROOT: {
-//					switch (token.kind) {
-//						case T_CASE: {
-//							a.lastOpN.setRight(caseClassesProd());
-//							break;
-//						}
-//						default: {
-//							a.lastOpN.setRight(blockProd());
-//						}
-//					}
-//				}
-//				default:
-//					throw new RuntimeException("Unexpected prev NodeKind: " + a.prevNKind);
-//			}
-//		}
-//		accept(T_RCURL);
-//	}
-
-
 	private ProdRootLeafN postfixExprProd() {
 		return postfixExprProd(null, null, null);
 	}
@@ -1434,6 +1411,14 @@ public class fParser {
 		}
 	}
 
+	void expressionPostfixExpr(ProdArgs a){
+		a.lastOpN.setRight(postfixExprProd());
+		if(token.kind == T_MATCH){
+			insertOpNode(a, next());
+			setRightLeaf(a, caseClassesProd());
+		}
+	}
+
 	void expressionProdLoop(ProdArgs a) {
 		loop:
 		while (true) {
@@ -1501,7 +1486,7 @@ public class fParser {
 
 				case T_NEW:
 				case T_LCURL: {
-					a.lastOpN.setRight(postfixExprProd());
+					expressionPostfixExpr(a);
 					break loop;
 				}
 
@@ -1552,9 +1537,11 @@ public class fParser {
 			case EXPR_PRD:
 				expressionProdLoop(a);
 				break;
+
 			case POSTFIX_EXPR_PRD:
 				postfixExprProd(a);
 				break;
+
 			case TYPE_PRD:
 				typeProdLoop(a);
 				break;
