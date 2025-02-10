@@ -979,6 +979,21 @@ public class fParser {
 	}
 
 	ProdRootLeafN modifierProd(ProdRootOp op) {
+		switch (token.kind){
+			case T_PRIVATE:
+			case T_PROTECTED:
+			case T_ABSTRACT:
+			case T_FINAL:
+			case T_SEALED:
+			case T_IMPLICIT:
+			case T_LAZY:
+			case T_OVERRIDE: {
+				break;
+			}
+			default: {
+				return null;
+			}
+		}
 		assert op == LOCAL_MODIFIER_PRD || op == ACCESS_MODIFIER_PRD || op == MODIFIER_PRD;
 		ProdArgs a = initRootNodeProlog(op);
 		loop:
@@ -1257,15 +1272,6 @@ public class fParser {
 		}
 		accept(T_RCURL);
 	}
-
-//	void blockExpr(ProdArgs a) {
-//		expectOneOf(0, T_LCURL);
-//		if(isLa(0, T_CASE)){
-//			a.lastOpN.setRight(caseClassesProd());
-//		} else {
-//			a.lastOpN.setRight(blockProd());
-//		}
-//	}
 
 	void pattern3LParen(ProdArgs a) {
 		switch (a.prevNKind) {
@@ -1660,12 +1666,8 @@ public class fParser {
 		return expectTypes;
 	}
 
-
-
-
 	public ProdRootLeafN compilationUnit() {
 		ProdArgs a = initRootNodeProlog(ProdRootOp.COMP_UNIT_PRD);
-		boolean firstStat = true;
 		while (token.kind != T_EOF) {
 			switch (token.kind) {
 				case T_SEMI:
@@ -1676,24 +1678,15 @@ public class fParser {
 				case T_CASE:
 				case T_TRAIT:
 				case T_CLASS: {
-					if (!firstStat) {
-						insertSemiOp(a);
-					} else {
-						firstStat = false;
-					}
 					tmplDef(a);
 					break;
 				}
 				case T_IMPORT: {
-					if (!firstStat) {
-						insertSemiOp(a);
-					} else {
-						firstStat = false;
-					}
 					importDef(a);
 					break;
 				}
 			}
+			insertSemiOp(a);
 		}
 		return prodRootLeafN(a);
 	}
