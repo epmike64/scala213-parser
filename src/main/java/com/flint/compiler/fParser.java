@@ -290,7 +290,7 @@ public class fParser {
 	private void expressionTID(ProdArgs a) {
 		// Prefix Operator not implemented
 		switch (a.prevNKind) {
-			case N_ROOT: N_ID_OPERATOR:{
+			case N_ROOT: case N_ID_OPERATOR:{
 				if(isLa(1, T_LPAREN)){
 					// x = "func(args)"
 					FunCallLeafNode funCallLeaf = new FunCallLeafNode(a.lastOpN, accept(T_ID));
