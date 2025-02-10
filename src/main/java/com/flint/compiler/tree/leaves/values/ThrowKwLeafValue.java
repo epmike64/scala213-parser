@@ -4,7 +4,7 @@ import com.flint.compiler.token.type.fToken;
 import com.flint.compiler.tree.leaves.nodes.ProdRootLeafN;
 
 public class ThrowKwLeafValue  extends TokenLeafValue {
-	public ProdRootLeafN throwLeafN;
+	public ProdRootLeafN throwExprLeafN;
 	public ThrowKwLeafValue(fToken value) {
 		  super(value);
 	 }

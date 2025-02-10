@@ -4,8 +4,8 @@ import com.flint.compiler.token.type.fToken;
 import com.flint.compiler.tree.leaves.nodes.ProdRootLeafN;
 
 public class DoKwLeafValue extends TokenLeafValue {
-	public ProdRootLeafN whileCondLeafN;
-	public ProdRootLeafN whileBodyLeafN;
+	public ProdRootLeafN doBodyLeafN;
+	public ProdRootLeafN doCondLeafN;
 	public DoKwLeafValue(fToken kw_token) {
 		  super(kw_token);
 	 }

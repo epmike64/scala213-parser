@@ -460,15 +460,28 @@ public class fParser {
 	}
 
 	void expressionDo(ProdArgs a) {
-		throw new RuntimeException("Not implemented");
+		DoKwLeafNode doLeafN = new DoKwLeafNode(a.lastOpN, accept(T_DO));
+		doLeafN.val().doBodyLeafN = expressionProd();
+		skipSemi();
+		accept(T_WHILE);
+		accept(T_LPAREN);
+		doLeafN.val().doCondLeafN = expressionProd();
+		accept(T_RPAREN);
 	}
 
 	void expressionThrow(ProdArgs a) {
-		throw new RuntimeException("Not implemented");
+		ThrowKwLeafNode throwLeafN = new ThrowKwLeafNode(a.lastOpN, accept(T_THROW));
+		throwLeafN.val().throwExprLeafN = expressionProd();
 	}
 
 	void expressionReturn(ProdArgs a) {
-		throw new RuntimeException("Not implemented");
+		ReturnKwLeafNode returnLeafN = new ReturnKwLeafNode(a.lastOpN, accept(T_RETURN));
+		switch (token.kind) {
+			case T_ID: case T_LPAREN: case T_LCURL: case T_IF: case T_WHILE: case T_FOR: case T_TRY: case T_DO: case T_THROW: case T_RETURN: case T_NEW:
+				returnLeafN.val().returnExprLeafN = expressionProd();
+				break;
+			default:
+		}
 	}
 
 	private ProdRootLeafN patterns() {
