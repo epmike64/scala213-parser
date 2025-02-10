@@ -5,6 +5,7 @@ import com.flint.compiler.tree.leaves.nodes.ProdRootLeafN;
 
 public class FunCallLeafValue extends NamedTokenLeafValue {
 	public ProdRootLeafN funcArgsLeafN;
+	public ProdRootLeafN returnTypeLeafN;
 	public FunCallLeafValue(NamedToken funNameTok) {
 		super(funNameTok);
 	}
