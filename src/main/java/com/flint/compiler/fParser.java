@@ -6,6 +6,7 @@ import com.flint.compiler.token.type.NamedToken;
 import com.flint.compiler.token.type.fToken;
 import com.flint.compiler.tree.fTree.*;
 import com.flint.compiler.tree.leaves.nodes.*;
+import com.flint.compiler.tree.leaves.values.GeneratorLeafValue;
 import com.flint.compiler.tree.operators.nodes.*;
 import com.flint.compiler.tree.operators.values.OperatorValue;
 
@@ -153,7 +154,7 @@ public class fParser {
 		return count;
 	}
 
-	void skimSemi() {
+	void skipSemi() {
 		while (token.kind == T_SEMI || token.kind == T_NL) {
 			next();
 		}
@@ -353,7 +354,7 @@ public class fParser {
 					ElseKwLeafNode elseLeafN = new ElseKwLeafNode(a.lastOpN, accept(T_ELSE));
 					setRightLeaf(a, elseLeafN);
 					elseLeafN.val().ifLeafN = ifLeafN;
-					skimSemi();
+					skipSemi();
 					elseLeafN.val().elseLeafN = expressionProd();
 				} else {
 					setRightLeaf(a, ifLeafN);
@@ -386,7 +387,72 @@ public class fParser {
 	}
 
 	void expressionFor(ProdArgs a) {
-		throw new RuntimeException("Not implemented");
+		ForKwLeafNode forLeafN = new ForKwLeafNode(a.lastOpN, accept(T_FOR));
+		if(token.kind == T_LPAREN) {
+			next();
+			forLeafN.val().enumeratorsLeafN = expressionProd();
+			accept(T_RPAREN);
+		} else if(token.kind == T_LBRACKET) {
+			next();
+			forLeafN.val().enumeratorsLeafN = enumerators();
+			accept(T_RBRACKET);
+		} else {
+			throw new RuntimeException("Unexpected token: " + token.kind);
+		}
+		skipNL();
+		if(token.kind == T_YIELD) {
+			next();
+		}
+		forLeafN.val().yieldLeafN = expressionProd();
+	}
+
+	ProdRootLeafN enumerators() {
+		ProdArgs a = initRootNodeProlog(ProdRootOp.ENUMERATORS_PRD);
+		generator(a); skipSemi();
+		loop:
+		while (true) {
+			switch (token.kind){
+				case T_RPAREN: case T_RCURL:
+					break loop;
+				default:
+					generator(a);
+					skipSemi(); break;
+			}
+		}
+		return prodRootLeafN(a);
+	}
+
+	void generator(ProdArgs a) {
+		GeneratorLeafNode genLeafN = new GeneratorLeafNode(a.lastOpN, token);
+		setRightLeaf(a, genLeafN);
+		if(token.kind == T_CASE){
+			genLeafN.val().isCase = true;
+		}
+		genLeafN.val().leftArgPattern1LeafN = pattern1Prod();
+		accept(T_LEFT_ARROW);
+		genLeafN.val().rightArgExprLeafN = expressionProd();
+
+		GeneratorLeafValue.GeneratorExprAfter genExprAfter = new GeneratorLeafValue.GeneratorExprAfter();
+
+		loop:
+		while (true){
+			skipSemi();
+			switch (token.kind) {
+				case T_IF:
+					next();
+					genExprAfter.guard = postfixExprProd();
+					genLeafN.val().generatorExprAfterList.add(genExprAfter);
+					break;
+				case T_ID: case T_LPAREN:
+					genExprAfter.pattern1LeafN = pattern1Prod();
+					acceptOpChar(OpChar.COLON);
+					genExprAfter.exprLeafN = expressionProd();
+					genLeafN.val().generatorExprAfterList.add(genExprAfter);
+					break;
+				default:
+					break loop;
+			}
+		}
 	}
 
 	void expressionTry(ProdArgs a) {
