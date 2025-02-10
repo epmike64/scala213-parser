@@ -296,7 +296,7 @@ public class fParser {
 
 
 	private void expressionTID(ProdArgs a) {
-		// Prefix Operator not implemented
+		// Prefix Operator not implemented !!
 		switch (a.prevNKind) {
 			case N_ROOT: case N_ID_OPERATOR:{
 				if(isLa(1, T_LPAREN)){
@@ -456,7 +456,16 @@ public class fParser {
 	}
 
 	void expressionTry(ProdArgs a) {
-		throw new RuntimeException("Not implemented");
+		TryKwLeafNode tryLeafN = new TryKwLeafNode(a.lastOpN, accept(T_TRY));
+		tryLeafN.val().tryBodyLeafN = expressionProd();
+		if(token.kind == T_CATCH) {
+			next();
+			tryLeafN.val().catchLeafN = expressionProd();
+		}
+		if(token.kind == T_FINALLY) {
+			next();
+			tryLeafN.val().finallyLeafN = expressionProd();
+		}
 	}
 
 	void expressionDo(ProdArgs a) {
