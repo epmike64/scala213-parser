@@ -360,6 +360,30 @@ public class fParser {
 		}
 	}
 
+	void expressionWhile(ProdArgs a) {
+		throw new RuntimeException("Not implemented");
+	}
+
+	void expressionFor(ProdArgs a) {
+		throw new RuntimeException("Not implemented");
+	}
+
+	void expressionTry(ProdArgs a) {
+		throw new RuntimeException("Not implemented");
+	}
+
+	void expressionDo(ProdArgs a) {
+		throw new RuntimeException("Not implemented");
+	}
+
+	void expressionThrow(ProdArgs a) {
+		throw new RuntimeException("Not implemented");
+	}
+
+	void expressionReturn(ProdArgs a) {
+		throw new RuntimeException("Not implemented");
+	}
+
 	private ProdRootLeafN patterns() {
 		ProdArgs a = initRootNodeProlog(ProdRootOp.PATTERNS_PRD);
 		setRightLeaf(a, pattern());
@@ -1152,11 +1176,12 @@ public class fParser {
 				}
 
 				case T_ID:
+				case T_STR_LIT:
 				case T_NEW:
 				case T_LPAREN:
 				case T_LCURL:
 				case T_IF:
-				case T_T_WHILE:
+				case T_WHILE:
 				case T_TRY:
 				case T_DO:
 				case T_FOR:
@@ -1249,11 +1274,12 @@ public class fParser {
 				}
 
 				case T_ID:
+				case T_STR_LIT:
 				case T_NEW:
 				case T_LPAREN:
 				case T_LCURL:
 				case T_IF:
-				case T_T_WHILE:
+				case T_WHILE:
 				case T_TRY:
 				case T_DO:
 				case T_FOR:
@@ -1428,6 +1454,42 @@ public class fParser {
 
 				case T_IF: {
 					expressionIF(a);
+					assert a.isContinue == true;
+					continue;
+				}
+
+				case T_WHILE: {
+					expressionWhile(a);
+					assert a.isContinue == true;
+					continue;
+				}
+
+				case T_TRY: {
+					expressionTry(a);
+					assert a.isContinue == true;
+					continue;
+				}
+
+				case T_DO: {
+					expressionDo(a);
+					assert a.isContinue == true;
+					continue;
+				}
+
+				case T_FOR: {
+					expressionFor(a);
+					assert a.isContinue == true;
+					continue;
+				}
+
+				case T_THROW: {
+					expressionThrow(a);
+					assert a.isContinue == true;
+					continue;
+				}
+
+				case T_RETURN: {
+					expressionReturn(a);
 					assert a.isContinue == true;
 					continue;
 				}

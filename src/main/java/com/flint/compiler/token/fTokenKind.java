@@ -49,9 +49,9 @@ public enum fTokenKind {
 	T_TYPE("type"),
 	T_VAL("val"),
 	T_VAR("var"),
-	T_T_WHILE("while"),
-	T_T_WITH("with"),
-	T_T_YIELD("yield"),
+	T_WHILE("while"),
+	T_WITH("with"),
+	T_YIELD("yield"),
 
 	T_LCURL("{"),
 	T_RCURL("}"),
