@@ -21,6 +21,7 @@ public class fParser {
 	private fToken token;
 	private fLexer lexer;
 	private static final fToken Semicolon = new NamedToken(T_SEMI, -1, -1, ";", OpChar.INVALID);
+	private static final fToken Comma = new NamedToken(T_COMMA, -1, -1, ";", OpChar.INVALID);
 
 	public fParser(fLexer lexer) {
 		this.lexer = lexer;
@@ -977,24 +978,73 @@ public class fParser {
 		}
 	}
 
-	ProdRootLeafN accessModifier() {
+	ProdRootLeafN modifierProd(ProdRootOp op) {
+		assert op == LOCAL_MODIFIER_PRD || op == ACCESS_MODIFIER_PRD || op == MODIFIER_PRD;
+		ProdArgs a = initRootNodeProlog(op);
+		loop:
+		while (true) {
+			switch (op){
+				case LOCAL_MODIFIER_PRD: {
+					if (_localModifier(a)) continue;
+					break loop;
+				}
+				case ACCESS_MODIFIER_PRD: {
+					if (_accessModifier(a)) continue;
+					break loop;
+				}
+				case MODIFIER_PRD: {
+					if(token.kind == T_OVERRIDE) {
+						_addModifierLeafN(a); continue;
+					}
+					if (_localModifier(a)) continue;
+					if (_accessModifier(a)) continue;
+					break;
+				}
+				default:
+					break loop;
+			}
+		}
+		return prodRootLeafN(a);
+	}
+
+	ModifierLeafNode _addModifierLeafN(ProdArgs a){
+		ModifierLeafNode leafNode = new ModifierLeafNode(a.lastOpN, token);
+		setRightLeaf(a, leafNode);
+		leafNode.val().setModifierKind(fModifierMap.getModifierKind(token.name()));
+		next();
+		insertCommaOp(a);
+		return leafNode;
+	}
+
+	boolean _localModifier(ProdArgs a){
+		switch (token.kind) {
+			case T_ABSTRACT:
+			case T_FINAL:
+			case T_SEALED:
+			case T_IMPLICIT:
+			case T_LAZY: {
+				_addModifierLeafN(a);
+				return true;
+			}
+			default:
+				return false;
+		}
+	}
+
+	boolean _accessModifier(ProdArgs a) {
 		switch (token.kind) {
 			case T_PRIVATE:
 			case T_PROTECTED: {
-				ProdArgs a = initRootNodeProlog(ProdRootOp.ACCESS_MODIFIER_PRD);
-				ModifierLeafNode leafNode = new ModifierLeafNode(a.lastOpN, token);
-				setRightLeaf(a, leafNode);
-				leafNode.val().setModifierKind(fModifierMap.getModifierKind(token.name()));
-				next();
+				ModifierLeafNode leafNode = _addModifierLeafN(a);
 				if (token.kind == T_LBRACKET) {
 					next();
 					leafNode.val().setAccessQualifier(fModifierMap.getAccessQualifier(token.name()));
 					accept(T_RBRACKET);
 				}
-				return prodRootLeafN(a);
+				return true;
 			}
 			default:
-				return null;
+				return false;
 		}
 	}
 
@@ -1015,7 +1065,7 @@ public class fParser {
 		if (token.kind == T_LBRACKET) {
 			leafNode.val().typeParamsLeafN = variantTypeParams();
 		}
-		leafNode.val().accessModifierLeafN = accessModifier();
+		leafNode.val().accessModifierLeafN = modifierProd(ACCESS_MODIFIER_PRD);
 		if (token.kind == T_LPAREN) {
 			leafNode.val().classParamsLeafN = classParams();
 		}
@@ -1554,6 +1604,10 @@ public class fParser {
 		insertOpNode(a, t);
 	}
 
+	private void insertCommaOp(ProdArgs a) {
+		insertOpNode(a, Comma);
+	}
+
 	private void insertSemiOp(ProdArgs a) {
 		insertOpNode(a, Semicolon);
 	}
@@ -1579,13 +1633,14 @@ public class fParser {
 	}
 
 	private void setRightLeaf(ProdArgs a, CommonLeafNode n) {
-		setRightLeaf(a, n, null);
+		setRightLeaf(a, n, (com.flint.compiler.token.fTokenKind[])null);
 	}
 
 	private void setRootRightLeaf(ProdArgs a, CommonLeafNode n, fTokenKind... expectTypes) {
 		assert a.prevNKind == fTreeNKind.N_ROOT;
 		setRightLeaf(a, n, expectTypes);
 	}
+
 	private void setRightLeaf(ProdArgs a, CommonLeafNode n, fTokenKind... expectTypes) {
 		assert a.lastOpN.right() == null;
 		a.lastOpN.setRight(n);
