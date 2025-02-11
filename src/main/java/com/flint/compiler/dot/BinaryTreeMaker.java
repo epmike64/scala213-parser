@@ -85,11 +85,20 @@ public class BinaryTreeMaker {
 				return addCaseKw((CaseKwLeafNode)n);
 			case N_ID_PAREN_WRAP_PATTERNS_LEAF:
 				return addConstrPattern((IdParenWrapPatternsLeafNode)n);
+			case N_STABLE_ID_LEAF:
+				return addStableId((StableIdLeafNode)n);
 			default:
 				throw new UnsupportedOperationException();
 		}
 	}
 
+	Node addStableId(StableIdLeafNode n) {
+		String label = "StableId: " + n.val().token.name();
+		if(n.val().classQualifier != null) {
+			label += " ClassQualifier: " + n.val().classQualifier;
+		}
+		return new Node(label, null, null);
+	}
 
 	Node addConstrPattern(IdParenWrapPatternsLeafNode n) {
 
