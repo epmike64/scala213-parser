@@ -323,7 +323,7 @@ public class fParser {
 					a.isContinue = true;
 					return;
 				}
-				expectOneOf(0, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_ELSE, T_FAT_ARROW, T_SEMI, T_NL);
+				expectOneOf(0, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_ELSE, T_FAT_ARROW, T_SEMI, T_NL, T_INT_LIT, T_CHR_LIT, T_STR_LIT, T_FLOAT_LIT, T_LNG_LIT, T_BOOL_LIT);
 				return;
 			}
 			default:
