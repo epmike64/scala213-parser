@@ -235,6 +235,7 @@ public class fParser {
 	}
 
 	void stableIdTerm(ProdArgs a){
+		a.isContinue = true;
 		switch (a.prevNKind){
 			case N_ROOT: case N_ID_OPERATOR:{
 				switch (token.kind){
@@ -252,6 +253,10 @@ public class fParser {
 				}
 			}
 			case N_ID_LEAF: {
+				if(isAssignOpT(0)){
+					a.isContinue = false;
+					return;
+				}
 				if(token.kind == T_DOT) {
 					insertOpNode(a, next());
 					return;
@@ -271,7 +276,8 @@ public class fParser {
 			switch (token.kind) {
 				case T_ID: case T_SUPER: case T_THIS: case T_DOT:
 					stableIdTerm(a);
-					continue;
+					if(a.isContinue) continue;
+					break loop;
 				default:
 					break loop;
 			}
