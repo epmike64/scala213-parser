@@ -200,7 +200,7 @@ public class fParser {
 
 				} else {
 					// x = SimplePatternA
-					addRightIdLeaf(a, expect);
+					setRightLeaf(a, stableId(), expect);
 				}
 				return;
 			}
@@ -215,7 +215,7 @@ public class fParser {
 
 				} else {
 					// x = SimplePatternA
-					addRightIdLeaf(a, expect);
+					setRightLeaf(a, stableId(), expect);
 					a.isContinue = true;
 				}
 				return;
@@ -1394,14 +1394,20 @@ public class fParser {
 		while (true) {
 			a.isContinue = false;
 			switch (token.kind) {
-				case T_ID: {
+
+				case T_INT_LIT: case T_FLOAT_LIT: case T_STR_LIT: case T_CHR_LIT: case T_TRUE: case T_FALSE: case T_NULL: {
+					setRightLeaf(a, new LiteralLeafNode(a.lastOpN, next()));
+					continue;
+				}
+
+				case T_ID: case T_THIS: case T_SUPER: {
 					if (isPipeOpT(0)) {
 						if (a.prevNKind == fTreeNKind.N_ROOT || a.prevNKind == fTreeNKind.N_ID_OPERATOR) {
 							throw new RuntimeException("Pipe | : " + token.kind);
 						}
 						break loop;
 					}
-					patternTID(a, patternTyp);
+				   patternTID(a, patternTyp);
 					if (a.isContinue) continue;
 					break loop;
 				}
