@@ -10,12 +10,7 @@ public class NumericToken extends StringToken {
 	public NumericToken(fTokenKind kind, int pos, int endPos, String stringVal, int radix) {
 		super(kind, pos, endPos, stringVal);
 		this.radix = radix;
-	}
-
-	protected void checkKind() {
-		if (kind.tag != fTokenTag.NUMERIC) {
-			throw new AssertionError("Bad token kind - expected " + fTokenTag.NUMERIC);
-		}
+		assert kind.tag == fTokenTag.NUMERIC;
 	}
 
 	@Override

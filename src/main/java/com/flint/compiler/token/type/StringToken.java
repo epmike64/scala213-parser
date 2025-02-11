@@ -10,12 +10,7 @@ public class StringToken extends fToken {
 	public StringToken(fTokenKind kind, int pos, int endPos, String stringVal) {
 		super(kind, pos, endPos);
 		this.stringVal = stringVal;
-	}
-
-	protected void checkKind() {
-		if (kind.tag != fTokenTag.STRING) {
-			throw new AssertionError("Bad token kind - expected " + fTokenTag.STRING);
-		}
+		assert kind.tag == fTokenTag.STRING;
 	}
 
 	@Override
