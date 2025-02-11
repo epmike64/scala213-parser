@@ -234,25 +234,12 @@ public class fParser {
 		}
 	}
 
-//	private void typeTID(ProdArgs a) {
-//		switch (a.prevNKind) {
-//			case N_ROOT: {
-//				// ROOT=": x"
-//				addRootRightIdLeaf(a, T_COMMA, T_ID, T_LBRACKET, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL);
-//				a.isContinue = true;
-//				return;
-//			}
-//			default:
-//				throw new RuntimeException("Unexpected Previous  NodeKind: " + a.prevNKind);
-//		}
-//	}
-
 	void stableIdTerm(ProdArgs a){
 		switch (a.prevNKind){
 			case N_ROOT: case N_ID_OPERATOR:{
 				switch (token.kind){
 					case T_ID:  case T_THIS: case T_SUPER:
-						StableIdLeafNode stableIdLeaf = new StableIdLeafNode(a.lastOpN, accept(token.kind));
+						StableIdLeafNode stableIdLeaf = new StableIdLeafNode(a.lastOpN, next());
 						setRightLeaf(a, stableIdLeaf);
 						if(prevToken.kind == T_SUPER && token.kind == T_LBRACKET) {
 							next();
@@ -311,8 +298,8 @@ public class fParser {
 					// x = id : Type
 					setRightLeaf(a, idTyped(a));
 				} else {
-					// x = id
-					addRightIdLeaf(a);
+					// x = stableId
+					setRightLeaf(a, stableId());
 				}
 				expectOneOf(0, T_COMMA, T_ID, T_LPAREN, T_RPAREN, T_ELSE, T_FAT_ARROW, T_SEMI, T_NL);
 				a.isContinue = true;
@@ -1525,13 +1512,18 @@ public class fParser {
 		}
 	}
 
+
 	void expressionProdLoop(ProdArgs a) {
 		loop:
 		while (true) {
 			a.isContinue = false;
 			switch (token.kind) {
+				case T_INT_LIT: case T_FLOAT_LIT: case T_STR_LIT: case T_CHR_LIT: case T_TRUE: case T_FALSE: case T_NULL: {
+					setRightLeaf(a, new LiteralLeafNode(a.lastOpN, next()));
+					continue;
+				}
 
-				case T_ID: {//ID, OPERATOR
+				case T_ID:  case T_THIS: case T_SUPER: {//ID, OPERATOR
 					expressionTID(a);
 					assert a.isContinue == true;
 					continue;
