@@ -261,7 +261,8 @@ public class fParser {
 					insertOpNode(a, next());
 					return;
 				}
-				throw new RuntimeException("Unexpected token: " + token.kind);
+				a.isContinue = false;
+				return;
 			}
 			default:
 				throw new RuntimeException("Unexpected Previous  NodeKind: " + a.prevNKind);
