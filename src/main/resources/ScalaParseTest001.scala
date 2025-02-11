@@ -4,5 +4,5 @@ class Point(var x: Int, var y: Int) {
 		x = x + dx * dy
 	}
 
-	override def toString: String = s"($x, $y)"
+	override def toInt: Int = 10 + 5 * 23
 }
