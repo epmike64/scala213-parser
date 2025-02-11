@@ -234,19 +234,63 @@ public class fParser {
 		}
 	}
 
-	private void typeTID(ProdArgs a) {
-		switch (a.prevNKind) {
-			case N_ROOT: {
-				// ROOT=": x"
-				addRootRightIdLeaf(a, T_COMMA, T_ID, T_LBRACKET, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL);
-				a.isContinue = true;
-				return;
+//	private void typeTID(ProdArgs a) {
+//		switch (a.prevNKind) {
+//			case N_ROOT: {
+//				// ROOT=": x"
+//				addRootRightIdLeaf(a, T_COMMA, T_ID, T_LBRACKET, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL);
+//				a.isContinue = true;
+//				return;
+//			}
+//			default:
+//				throw new RuntimeException("Unexpected Previous  NodeKind: " + a.prevNKind);
+//		}
+//	}
+
+	void stableIdTerm(ProdArgs a){
+		switch (a.prevNKind){
+			case N_ROOT: case N_ID_OPERATOR:{
+				switch (token.kind){
+					case T_ID:  case T_THIS: case T_SUPER:
+						StableIdLeafNode stableIdLeaf = new StableIdLeafNode(a.lastOpN, accept(token.kind));
+						setRightLeaf(a, stableIdLeaf);
+						if(prevToken.kind == T_SUPER && token.kind == T_LBRACKET) {
+							next();
+							stableIdLeaf.val().classQualifier = accept(T_ID).name();
+							accept(T_RBRACKET);
+						}
+						return;
+					default:
+						throw new RuntimeException("Unexpected token: " + token.kind);
+				}
+			}
+			case N_ID_LEAF: {
+				if(token.kind == T_DOT) {
+					insertOpNode(a, next());
+					return;
+				}
+				throw new RuntimeException("Unexpected token: " + token.kind);
 			}
 			default:
 				throw new RuntimeException("Unexpected Previous  NodeKind: " + a.prevNKind);
 		}
 	}
 
+	ProdRootLeafN stableId(){
+		assert token.kind == T_ID || token.kind == T_SUPER || token.kind == T_THIS;
+		ProdArgs a = initRootNodeProlog(ProdRootOp.STABLE_ID_PRD);
+		loop:
+		while(true) {
+			switch (token.kind) {
+				case T_ID: case T_SUPER: case T_THIS: case T_DOT:
+					stableIdTerm(a);
+					continue;
+				default:
+					break loop;
+			}
+		}
+		return prodRootLeafN(a);
+	}
 
 	private void expressionTID(ProdArgs a) {
 		// Prefix Operator not implemented !!
@@ -1390,11 +1434,11 @@ public class fParser {
 		while (true) {
 			a.isContinue = false;
 			switch (token.kind) {
-				case T_ID: {
+				case T_ID: case T_THIS: case T_SUPER:{
 					if(isAssignOpT(0)){
 						break loop;
 					}
-					typeTID(a);
+					setRightLeaf(a, stableId());
 					assert a.isContinue == true;
 					continue;
 				}

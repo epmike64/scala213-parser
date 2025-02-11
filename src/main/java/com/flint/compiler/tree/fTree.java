@@ -42,7 +42,8 @@ public interface fTree {
 		N_RETURN_KW_LEAF,
 		N_THROW_KW_LEAF,
 		N_TRY_KW_LEAF,
-		N_GENERATOR_LEAF
+		N_GENERATOR_LEAF,
+		N_STABLE_ID_LEAF
 	}
 
 	/**

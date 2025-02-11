@@ -1,7 +1,7 @@
 package com.flint.compiler.token;
 
 public enum fOperatorKind {
-
+	O_DOT(".", 9, false),
 	O_COLON(":", 8, true),
 	O_FAT_ARROW("=>", 7, false),
 	O_MULTIPLY("*", 6, false),
