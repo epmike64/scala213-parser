@@ -4,5 +4,5 @@ class Point(var x: Int, var y: Int) {
 		x = x + dx * dy
 	}
 
-	override def toInt: Int = 10 + 5 * 23
+	override def sum: Int = A + B * C
 }

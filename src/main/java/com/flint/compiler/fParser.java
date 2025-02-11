@@ -65,53 +65,6 @@ public class fParser {
 		return false;
 	}
 
-	OpChar laOpChar(int n) {
-		fToken laTok = lookAhead(n);
-		if (laTok.kind == T_ID && laTok.name().length() == 1) {
-			char ch = laTok.name().charAt(0);
-			switch (ch) {
-				case '+':
-					return OpChar.PLUS;
-				case '-':
-					return OpChar.MINUS;
-				case '*':
-					return OpChar.STAR;
-				case '/':
-					return OpChar.FORWARD_SLASH;
-				case '\\':
-					return OpChar.BACKSLASH;
-				case '%':
-					return OpChar.PERCENT;
-				case '&':
-					return OpChar.AMPERSAND;
-				case '|':
-					return OpChar.PIPE;
-				case '^':
-					return OpChar.CARET;
-				case '<':
-					return OpChar.LT;
-				case '>':
-					return OpChar.GT;
-				case '=':
-					return OpChar.ASSIGN;
-				case '!':
-					return OpChar.BANG;
-				case '~':
-					return OpChar.TILDE;
-				case '?':
-					return OpChar.QUESTION;
-				case ':':
-					return OpChar.COLON;
-				case '@':
-					return OpChar.AT;
-				case '#':
-					return OpChar.POUND;
-				default:
-					throw new AssertionError("Expected operator but found " + token.kind);
-			}
-		}
-		throw new AssertionError("Expected operator but found " + token.kind);
-	}
 
 	private boolean isLaIdOpChar(int la, OpChar... ops) {
 		return isLaOpChar(la, T_ID, ops);
