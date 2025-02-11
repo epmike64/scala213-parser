@@ -1741,9 +1741,51 @@ public class fParser {
 	private void importDef(ProdArgs a) {
 		ImportDefLeafNode leafNode = new ImportDefLeafNode(a.lastOpN, accept(T_IMPORT));
 		setRightLeaf(a, leafNode);
-		accept(T_ID);
-		leafNode.val().importPath = prevToken.name();
+		leafNode.val().importExprsLeafN = importExprs();
 	}
+
+	ProdRootLeafN importExprs() {
+		ProdArgs a = initRootNodeProlog(ProdRootOp.IMPORT_EXPRS_PRD);
+		importExpr(a);
+		while(token.kind == T_COMMA) {
+			insertCommaOp(a);
+			importExpr(a);
+		}
+		return prodRootLeafN(a);
+	}
+
+	void importExpr(ProdArgs a){
+		ImportExprLeafNode leafNode = new ImportExprLeafNode(a.lastOpN, accept(T_ID));
+		setRightLeaf(a, leafNode);
+		while(token.kind == T_DOT) {
+			leafNode.val().ids.add(accept(T_ID).name());
+		}
+		if(token.kind == T_LCURL) {
+			next();
+			leafNode.val().importSelectorsLeafN = importSelectors(a);
+			accept(T_RCURL);
+		}
+	}
+
+	ProdRootLeafN importSelectors(ProdArgs a) {
+		ProdArgs b = initRootNodeProlog(ProdRootOp.IMPORT_SELECTORS_PRD);
+		importSelector(b);
+		while(token.kind == T_COMMA) {
+			insertCommaOp(b);
+			importSelector(b);
+		}
+		return prodRootLeafN(b);
+	}
+
+	void importSelector(ProdArgs a) {
+		ImportSelectorLeafNode leafNode = new ImportSelectorLeafNode(a.lastOpN, accept(T_ID));
+		setRightLeaf(a, leafNode);
+		if(token.kind == T_FAT_ARROW) {
+			next();
+			leafNode.val().rename = accept(T_ID).name();
+		}
+	}
+
 
 	CommonOpNode _insertOpNode(CommonOpNode lastOpN, fToken op_token) {
 		fOperatorKind k = getOperatorKind(op_token);

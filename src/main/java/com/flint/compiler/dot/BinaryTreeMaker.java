@@ -176,8 +176,9 @@ public class BinaryTreeMaker {
 	}
 
 	Node addImport(ImportDefLeafNode importLeafNode) {
-		String label = "Import: " + importLeafNode.val().importPath;
-		return new Node(label, null, null);
+		String label = "Import: ";
+		Node left = addNode(importLeafNode.val().importExprsLeafN);
+		return new Node(label, left, null);
 	}
 
 	Node addVariantTypeParam(VariantTypeParamLeafNode n) {
