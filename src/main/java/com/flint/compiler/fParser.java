@@ -1758,12 +1758,17 @@ public class fParser {
 		ImportExprLeafNode leafNode = new ImportExprLeafNode(a.lastOpN, accept(T_ID));
 		setRightLeaf(a, leafNode);
 		while(token.kind == T_DOT) {
-			leafNode.val().ids.add(accept(T_ID).name());
-		}
-		if(token.kind == T_LCURL) {
 			next();
-			leafNode.val().importSelectorsLeafN = importSelectors(a);
-			accept(T_RCURL);
+			if(token.kind == T_ID){
+				leafNode.val().ids.add(accept(T_ID).name());
+				continue;
+			}
+			if(token.kind == T_LCURL){
+				next();
+				leafNode.val().importSelectorsLeafN = importSelectors(a);
+				accept(T_RCURL);
+				break;
+			}
 		}
 	}
 

@@ -87,11 +87,28 @@ public class BinaryTreeMaker {
 				return addConstrPattern((IdParenWrapPatternsLeafNode)n);
 			case N_STABLE_ID_LEAF:
 				return addStableId((StableIdLeafNode)n);
+			case N_IMPORT_EXPR_LEAF:
+				return addImportExpr((ImportExprLeafNode)n);
+				case N_IMPORT_SELECTOR_LEAF:
+				return addImportSelector((ImportSelectorLeafNode)n);
 			default:
 				throw new UnsupportedOperationException();
 		}
 	}
 
+	Node addImportSelector(ImportSelectorLeafNode n) {
+		String label = "ImportSelector: " + n.val().rename;
+		return new Node(label, null, null);
+	}
+
+	Node addImportExpr(ImportExprLeafNode n) {
+		String label = "ImportExpr: ";
+		for(String id : n.val().ids) {
+			label += id + ".";
+		}
+		Node left = addNode(n.val().importSelectorsLeafN);
+		return new Node(label, left, null);
+	}
 	Node addStableId(StableIdLeafNode n) {
 		String label = "StableId: " + n.val().token.name();
 		if(n.val().classQualifier != null) {
