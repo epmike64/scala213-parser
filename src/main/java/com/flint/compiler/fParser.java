@@ -7,6 +7,7 @@ import com.flint.compiler.token.type.fToken;
 import com.flint.compiler.tree.fTree.*;
 import com.flint.compiler.tree.leaves.nodes.*;
 import com.flint.compiler.tree.leaves.values.GeneratorLeafValue;
+import com.flint.compiler.tree.leaves.values.ObjectDefLeafValue;
 import com.flint.compiler.tree.operators.nodes.*;
 import com.flint.compiler.tree.operators.values.OperatorValue;
 
@@ -1185,32 +1186,37 @@ public class fParser {
 		if (token.kind == T_LPAREN) {
 			leafNode.val().classParamsLeafN = classParams();
 		}
-		if (token.kind == T_EXTENDS) {
-			next();
-			leafNode.val().extends_ = true;
-		}
-		switch (token.kind) {
-			case T_LCURL:
-				leafNode.val().templateBodyLeafN = templateBodyProd();
-				break;
-			case T_ID:
-			case T_LPAREN:
-				leafNode.val().classParentsLeafN = classParents();
-				if (token.kind == T_LCURL) {
-					leafNode.val().templateBodyLeafN = templateBodyProd();
-				}
-				break;
-			default:
-				throw new RuntimeException("Unexpected token: " + token.kind);
-		}
+		classTemplateOpt(leafNode.val());
 	}
 
 	void objectDef(ProdArgs a, boolean isCase) {
 		ObjectDefLeafNode leafNode = new ObjectDefLeafNode(a.lastOpN, accept(T_OBJECT));
 		setRightLeaf(a, leafNode);
-		accept(T_ID);
-		leafNode.val().objectName = prevToken.name();
 		leafNode.val().isCase = isCase;
+		leafNode.val().className = accept(T_ID).name();
+		classTemplateOpt(leafNode.val());
+	}
+
+
+	void classTemplateOpt(ObjectDefLeafValue v) {
+		if (token.kind == T_EXTENDS) {
+			next();
+			v.extends_ = true;
+		}
+		switch (token.kind) {
+			case T_LCURL:
+				v.templateBodyLeafN = templateBodyProd();
+				break;
+			case T_ID:
+			case T_LPAREN:
+				v.classParentsLeafN = classParents();
+				if (token.kind == T_LCURL) {
+					v.templateBodyLeafN = templateBodyProd();
+				}
+				break;
+			default:
+				throw new RuntimeException("Unexpected token: " + token.kind);
+		}
 	}
 
 	void templateStatProdLoop(ProdArgs a) {
@@ -1880,6 +1886,7 @@ public class fParser {
 				}
 				case T_CASE:
 				case T_TRAIT:
+				case T_OBJECT:
 				case T_CLASS: {
 					tmplDef(a);
 					break;

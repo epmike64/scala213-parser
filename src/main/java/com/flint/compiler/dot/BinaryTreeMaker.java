@@ -143,9 +143,23 @@ public class BinaryTreeMaker {
 	}
 
 	Node addObjectDef(ObjectDefLeafNode n) {
-		String label = "ObjectDef: " + n.val().objectName;
+		String label = "ObjectDef: " + n.val().className + "\nCase: " + n.val().isCase;
 		Node left = null;//addNode(n.val().objectNameLeafN);
 		return new Node(label, left, null);
+	}
+
+	Node addClassDef(ClassDefLeafNode n) {
+		String label = "Class: " + n.val().className + "\nCase: " + n.val().isCase;
+
+		Node l1 = addNode(n.val().typeParamsLeafN);
+		Node l2 = addNode(n.val().classParamsLeafN);
+		Node n1 = new Node("Class Prop1",  l1,  l2);
+
+		l1 = addNode(n.val().classParentsLeafN);
+		l2 = addNode(n.val().templateBodyLeafN);
+
+		Node n2 = new Node("Class Prop2", l1, l2);
+		return new Node(label, n1, n2);
 	}
 
 	Node addTypeDef(TypeDefDclLeafNode n) {
@@ -225,19 +239,7 @@ public class BinaryTreeMaker {
 		return new Node(label, null, null);
 	}
 
-	Node addClassDef(ClassDefLeafNode n) {
-		String label = "Class: " + n.val().className + "\nCase: " + n.val().isCase;
 
-		Node l1 = addNode(n.val().typeParamsLeafN);
-		Node l2 = addNode(n.val().classParamsLeafN);
-		Node n1 = new Node("Class Prop1",  l1,  l2);
-
-		l1 = addNode(n.val().classParentsLeafN);
-		l2 = addNode(n.val().templateBodyLeafN);
-
-		Node n2 = new Node("Class Prop2", l1, l2);
-		return new Node(label, n1, n2);
-	}
 
 	Node addTypeLeaf(TypeLeafNode typeLeaf) {
 		String label = "Type: " + typeLeaf.typeName();
