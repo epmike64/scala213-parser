@@ -1,6 +1,6 @@
 ```java
 # Scala 2.13 Parser
-It builds abstract syntax tree (AST) and writes a dot script.
+It builds an abstract syntax tree (AST) and writes a dot script.
 ```
 ```ruby
  Work in Progress !
