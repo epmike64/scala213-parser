@@ -174,7 +174,7 @@ public class fParser {
 
 		switch (a.prevNKind) {
 			case N_ROOT: {
-				fTokenKind[] expect = expect2Array(T_ID, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL);
+				fTokenKind[] expect = expect2Array(T_ID, T_LPAREN, T_RPAREN, T_FAT_ARROW, T_COMMA, T_SEMI, T_NL);
 				a.isContinue = false;
 
 				if(patternTyp == PATTERN1_PRD) {
