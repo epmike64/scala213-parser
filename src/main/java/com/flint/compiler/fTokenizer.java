@@ -7,7 +7,6 @@ import com.flint.compiler.token.type.NamedToken;
 import com.flint.compiler.token.type.NumericToken;
 import com.flint.compiler.token.type.StringToken;
 import com.flint.compiler.token.type.fToken;
-
 import static com.flint.compiler.util.LayoutCharacters.*;
 
 public class fTokenizer {
@@ -167,22 +166,27 @@ public class fTokenizer {
 
 				case '/': {
 					if (reader.peekChar() == '/') {
-						reader.skipChar(1);
-						while (reader.ch != CR && reader.ch != LF && reader.bp < reader.buflen) {
+						do {
 							reader.scanChar();
-						}
+						} while (reader.ch != CR && reader.ch != LF && reader.bp < reader.buflen);
 						continue wlp;
 					}
 
 					if (reader.peekChar() == '*') {
-						char prev = reader.skipChar(1);
+						reader.scanChar();
 						while (reader.bp < reader.buflen) {
-							if (reader.ch == '/' && prev == '*') {
+							if (reader.ch == '*') {
 								reader.scanChar();
-								continue wlp;
+								if (reader.ch == '/') break;
+							} else {
+								reader.scanCommentChar();
 							}
-							prev = reader.scanChar();
 						}
+						if (reader.ch == '/') {
+							reader.scanChar();
+							continue wlp;
+						}
+
 						lexError(pos, "unclosed.comment");
 					}
 
@@ -227,7 +231,7 @@ public class fTokenizer {
 	private void scanLitChar(int pos) {
 		if (reader.ch == '\\') {
 			if (reader.peekChar() == '\\') {
-				reader.skipChar(1);
+				reader.scanChar();
 				reader.putChar('\\', true);
 			} else {
 				reader.scanChar();

@@ -32,21 +32,13 @@ public class fReader {
 		scanChar();
 	}
 
-	protected char skipChar(int n){
-		char prev = EOI;
-		for(int i = 0; i < n + 1; i++){
-			prev = scanChar();
-		}
-		return prev;
-	}
-
-	protected char scanChar() {
-		char prev = EOI;
+	protected void scanChar() {
 		if (bp < buflen) {
-			prev = ch;
 			ch = buf[++bp];
+			if (ch == '\\') {
+				convertUnicode();
+			}
 		}
-		return prev;
 	}
 
 	protected void putChar(char ch, boolean scan)  {
@@ -82,6 +74,17 @@ public class fReader {
 
 	protected boolean isUnicode() {
 		return unicodeConversionBp == bp;
+	}
+
+	protected void scanCommentChar() {
+		scanChar();
+		if (ch == '\\') {
+			if (peekChar() == '\\' && !isUnicode()) {
+				scanChar();
+			} else {
+				convertUnicode();
+			}
+		}
 	}
 
 	protected void convertUnicode()  {
