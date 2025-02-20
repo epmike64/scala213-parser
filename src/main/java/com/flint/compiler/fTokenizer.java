@@ -39,7 +39,7 @@ public class fTokenizer {
 		int endPos = 0;
 		OpChar opChar = OpChar.INVALID;
 
-		loop:
+		wlp:
 		while (true) {
 
 			assert reader.sp == 0 && tname == null && radix == 0;
@@ -48,7 +48,7 @@ public class fTokenizer {
 			switch (reader.ch) {
 				case EOI: {
 					tk = fTokenKind.T_EOF;
-					break loop;
+					break wlp;
 				}
 				case SP: case TAB: case FF: {
 					do {
@@ -63,14 +63,14 @@ public class fTokenizer {
 				case LF: {
 					reader.scanChar();
 					tk = fTokenKind.T_NL;
-					break loop;
+					break wlp;
 				}
 				case 's': {
 					if (reader.peekChar() == '"') {
 						reader.scanChar();
 						pos = reader.bp;
 						scanLiteralString(pos, true);
-						break loop;
+						break wlp;
 					}
 					// fall through
 				}
@@ -88,7 +88,7 @@ public class fTokenizer {
 				case 'z':
 				case '$': case '_': {
 					scanIdent(pos);
-					break loop;
+					break wlp;
 				}
 				case '0': {
 					reader.scanChar();
@@ -105,13 +105,13 @@ public class fTokenizer {
 						reader.putChar('0');
 						scanNumber(pos, 8);
 					}
-					break loop;
+					break wlp;
 				}
 
 				case '1': case '2': case '3': case '4':
 				case '5': case '6': case '7': case '8': case '9': {
 					scanNumber(pos, 10);
-					break loop;
+					break wlp;
 				}
 
 				case '.': {
@@ -122,47 +122,47 @@ public class fTokenizer {
 					} else {
 						tk = fTokenKind.T_DOT;
 					}
-					break loop;
+					break wlp;
 				}
 				case ',': {
 					reader.scanChar();
 					tk = fTokenKind.T_COMMA;
-					break loop;
+					break wlp;
 				}
 				case ';': {
 					reader.scanChar();
 					tk = fTokenKind.T_SEMI;
-					break loop;
+					break wlp;
 				}
 				case '(': {
 					reader.scanChar();
 					tk = fTokenKind.T_LPAREN;
-					break loop;
+					break wlp;
 				}
 				case ')': {
 					reader.scanChar();
 					tk = fTokenKind.T_RPAREN;
-					break loop;
+					break wlp;
 				}
 				case '[': {
 					reader.scanChar();
 					tk = fTokenKind.T_LBRACKET;
-					break loop;
+					break wlp;
 				}
 				case ']': {
 					reader.scanChar();
 					tk = fTokenKind.T_RBRACKET;
-					break loop;
+					break wlp;
 				}
 				case '{': {
 					reader.scanChar();
 					tk = fTokenKind.T_LCURL;
-					break loop;
+					break wlp;
 				}
 				case '}': {
 					reader.scanChar();
 					tk = fTokenKind.T_RCURL;
-					break loop;
+					break wlp;
 				}
 
 				case '/': {
@@ -171,7 +171,7 @@ public class fTokenizer {
 						while (reader.ch != CR && reader.ch != LF && reader.bp < reader.buflen) {
 							reader.scanChar();
 						}
-						continue;
+						continue wlp;
 					}
 
 					if (reader.peekChar() == '*') {
@@ -179,7 +179,7 @@ public class fTokenizer {
 						while (reader.bp < reader.buflen) {
 							if (reader.ch == '/' && prev == '*') {
 								reader.scanChar();
-								continue;
+								continue wlp;
 							}
 							prev = reader.scanChar();
 						}
@@ -187,14 +187,14 @@ public class fTokenizer {
 					}
 
 					scanIdent(pos);
-					break loop;
+					break wlp;
 				}
 
 				default: {
 
 					if (isOpChar(reader.ch)) {
 						opChar = scanIdent(pos);
-						break loop;
+						break wlp;
 					}
 
 					throw new RuntimeException("illegal.char");
