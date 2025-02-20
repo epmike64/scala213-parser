@@ -847,7 +847,7 @@ public class fParser {
 			ProdRootLeafN v = paramClause();
 			if (v != null) {
 				setRightLeaf(a, v);
-				insertSemiOp(a);
+				insertSemiOp(a, Semicolon);
 			}
 		}
 		return prodRootLeafN(a);
@@ -1129,7 +1129,7 @@ public class fParser {
 		setRightLeaf(a, leafNode);
 		leafNode.val().setModifierKind(fModifierMap.getModifierKind(token.name()));
 		next();
-		insertCommaOp(a);
+		insertCommaOp(a, Comma);
 		return leafNode;
 	}
 
@@ -1282,7 +1282,7 @@ public class fParser {
 				default:
 					throw new RuntimeException("Unexpected token: " + token.kind);
 			}
-			insertCommaOp(a);
+			insertCommaOp(a, Comma);
 		}
 		accept(T_RCURL);
 	}
@@ -1376,7 +1376,7 @@ public class fParser {
 					throw new RuntimeException("Unexpected token: " + token.kind);
 			}
 			if (!isCase) {
-				insertSemiOp(a);
+				insertSemiOp(a, Semicolon);
 			}
 		}
 		accept(T_RCURL);
@@ -1493,7 +1493,7 @@ public class fParser {
 			switch (token.kind) {
 				case T_CASE: {
 					caseClassesCase(a);
-					insertSemiOp(a);
+					insertSemiOp(a,Semicolon);
 					continue;
 				}
 				case T_RCURL:
@@ -1754,7 +1754,7 @@ public class fParser {
 		ProdArgs a = initRootNodeProlog(ProdRootOp.IMPORT_EXPRS_PRD);
 		importExpr(a);
 		while(token.kind == T_COMMA) {
-			insertCommaOp(a);
+			insertCommaOp(a, next());
 			importExpr(a);
 		}
 		return prodRootLeafN(a);
@@ -1782,7 +1782,7 @@ public class fParser {
 		ProdArgs b = initRootNodeProlog(ProdRootOp.IMPORT_SELECTORS_PRD);
 		importSelector(b);
 		while(token.kind == T_COMMA) {
-			insertCommaOp(b);
+			insertCommaOp(b, next());
 			importSelector(b);
 		}
 		return prodRootLeafN(b);
@@ -1825,12 +1825,9 @@ public class fParser {
 		insertOpNode(a, t);
 	}
 
-	private void insertCommaOp(ProdArgs a) {
-		insertOpNode(a, Comma);
-	}
-
-	private void insertSemiOp(ProdArgs a) {
-		insertOpNode(a, Semicolon);
+	private void insertSemiOp(ProdArgs a, fToken t) {
+		assert t.kind == T_SEMI;
+		insertOpNode(a, t);
 	}
 
 	private ProdArgs initRootNodeProlog(ProdRootOp prodRootOp) {
@@ -1889,12 +1886,12 @@ public class fParser {
 				case T_TRAIT:
 				case T_OBJECT:
 				case T_CLASS: {
-					if(!first) insertSemiOp(a);
+					if(!first) insertSemiOp(a, Semicolon);
 					tmplDef(a);
 					break;
 				}
 				case T_IMPORT: {
-					if(!first) insertSemiOp(a);
+					if(!first) insertSemiOp(a, Semicolon);
 					importDef(a);
 					break;
 				}
