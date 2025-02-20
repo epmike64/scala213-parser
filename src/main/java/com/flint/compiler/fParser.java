@@ -663,9 +663,9 @@ public class fParser {
 	}
 
 	private void postfixExprNew(ProdArgs a) {
-		accept(T_NEW);
+		InstanceCreationLeafNode node = new InstanceCreationLeafNode(a.lastOpN, accept(T_NEW));
+		classTemplateOrTemplateBody(node.val());
 	}
-
 
 	private ProdRootLeafN postfixExprProd() {
 		return postfixExprProd(null, null, null);
@@ -1203,6 +1203,10 @@ public class fParser {
 			next();
 			v.extends_ = true;
 		}
+		classTemplateOrTemplateBody(v);
+	}
+
+	void classTemplateOrTemplateBody(ObjectDefLeafValue v) {
 		switch (token.kind) {
 			case T_LCURL:
 				v.templateBodyLeafN = templateBodyProd();
