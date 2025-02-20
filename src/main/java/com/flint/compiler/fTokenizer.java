@@ -141,6 +141,33 @@ public class fTokenizer {
 				case '}':
 				{	reader.scanChar(); tk = fTokenKind.T_RCURL; break loop; }
 
+				case '/': {
+					if (reader.peekChar() == '/') {
+						reader.skipChar(2);
+						do {
+							reader.scanChar();
+						} while (reader.ch != CR && reader.ch != LF && reader.bp < reader.buflen);
+						continue;
+					}
+
+					if (reader.peekChar() == '*') {
+						reader.skipChar(2);
+						char prev = reader.scanChar();
+						while (reader.bp < reader.buflen) {
+							if(reader.ch == '/' && prev == '*') {
+								reader.scanChar();
+								continue;
+							}
+							prev = reader.scanChar();
+						}
+						lexError(pos, "unclosed.comment");
+
+					} else {
+						scanIdent(pos);
+					}
+					break loop;
+			}
+
 				default: {
 
 					if (isOpChar(reader.ch)) {
