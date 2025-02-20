@@ -32,6 +32,14 @@ public class fReader {
 		scanChar();
 	}
 
+	protected char skipChar(int n){
+		char prev = EOI;
+		for(int i = 0; i < n + 1; i++){
+			prev = scanChar();
+		}
+		return prev;
+	}
+
 	protected char scanChar() {
 		char prev = EOI;
 		if (bp < buflen) {
@@ -66,14 +74,6 @@ public class fReader {
 		if ('0' <= c && c <= '9')
 			return Character.digit(ch, base); //a fast common case
 		return -1;
-	}
-
-	protected void skipChar() {
-		bp++;
-	}
-
-	protected void skipChar(int n) {
-		bp+=n;
 	}
 
 	protected char peekChar() {

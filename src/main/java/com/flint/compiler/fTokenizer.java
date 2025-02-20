@@ -124,49 +124,71 @@ public class fTokenizer {
 					}
 					break loop;
 				}
-				case ',':
-				{ reader.scanChar(); tk = fTokenKind.T_COMMA; break loop; }
-				case ';':
-				{ reader.scanChar(); tk = fTokenKind.T_SEMI; break loop; }
-				case '(':
-				{ reader.scanChar(); tk = fTokenKind.T_LPAREN; break loop; }
-				case ')':
-				{ reader.scanChar(); tk = fTokenKind.T_RPAREN; break loop; }
-				case '[':
-				{	reader.scanChar(); tk = fTokenKind.T_LBRACKET; break loop; }
-				case ']':
-				{ reader.scanChar(); tk = fTokenKind.T_RBRACKET; break loop; }
-				case '{':
-				{	reader.scanChar(); tk = fTokenKind.T_LCURL; break loop; }
-				case '}':
-				{	reader.scanChar(); tk = fTokenKind.T_RCURL; break loop; }
+				case ',': {
+					reader.scanChar();
+					tk = fTokenKind.T_COMMA;
+					break loop;
+				}
+				case ';': {
+					reader.scanChar();
+					tk = fTokenKind.T_SEMI;
+					break loop;
+				}
+				case '(': {
+					reader.scanChar();
+					tk = fTokenKind.T_LPAREN;
+					break loop;
+				}
+				case ')': {
+					reader.scanChar();
+					tk = fTokenKind.T_RPAREN;
+					break loop;
+				}
+				case '[': {
+					reader.scanChar();
+					tk = fTokenKind.T_LBRACKET;
+					break loop;
+				}
+				case ']': {
+					reader.scanChar();
+					tk = fTokenKind.T_RBRACKET;
+					break loop;
+				}
+				case '{': {
+					reader.scanChar();
+					tk = fTokenKind.T_LCURL;
+					break loop;
+				}
+				case '}': {
+					reader.scanChar();
+					tk = fTokenKind.T_RCURL;
+					break loop;
+				}
 
 				case '/': {
 					if (reader.peekChar() == '/') {
-						reader.skipChar(2);
-						do {
+						reader.skipChar(1);
+						while (reader.ch != CR && reader.ch != LF && reader.bp < reader.buflen) {
 							reader.scanChar();
-						} while (reader.ch != CR && reader.ch != LF && reader.bp < reader.buflen);
+						}
 						continue;
 					}
 
 					if (reader.peekChar() == '*') {
-						reader.skipChar(2);
-						char prev = reader.scanChar();
+						char prev = reader.skipChar(1);
 						while (reader.bp < reader.buflen) {
-							if(reader.ch == '/' && prev == '*') {
+							if (reader.ch == '/' && prev == '*') {
 								reader.scanChar();
 								continue;
 							}
 							prev = reader.scanChar();
 						}
 						lexError(pos, "unclosed.comment");
-
-					} else {
-						scanIdent(pos);
 					}
+
+					scanIdent(pos);
 					break loop;
-			}
+				}
 
 				default: {
 
@@ -205,7 +227,7 @@ public class fTokenizer {
 	private void scanLitChar(int pos) {
 		if (reader.ch == '\\') {
 			if (reader.peekChar() == '\\') {
-				reader.skipChar();
+				reader.skipChar(1);
 				reader.putChar('\\', true);
 			} else {
 				reader.scanChar();
