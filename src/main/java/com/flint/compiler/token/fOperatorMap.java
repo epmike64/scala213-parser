@@ -28,6 +28,10 @@ public class fOperatorMap {
 				return fOperatorKind.O_FAT_ARROW;
 			case T_SEMI:
 				return fOperatorKind.O_SEMI;
+			case T_DOT:
+				return fOperatorKind.O_DOT;
+			case T_MATCH:
+				return fOperatorKind.O_MATCH;
 			case T_ID:
 				fOperatorKind op = map.get(token.name());
 				if(op != null) return op;
