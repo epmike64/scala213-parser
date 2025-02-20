@@ -75,16 +75,8 @@ public class fReader {
 	protected boolean isUnicode() {
 		return unicodeConversionBp == bp;
 	}
-
-	protected void scanCommentChar() {
-		scanChar();
-		if (ch == '\\') {
-			if (peekChar() == '\\' && !isUnicode()) {
-				scanChar();
-			} else {
-				convertUnicode();
-			}
-		}
+	protected void skipChar() {
+		bp++;
 	}
 
 	protected void convertUnicode()  {

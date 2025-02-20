@@ -7,6 +7,7 @@ import com.flint.compiler.token.type.NamedToken;
 import com.flint.compiler.token.type.NumericToken;
 import com.flint.compiler.token.type.StringToken;
 import com.flint.compiler.token.type.fToken;
+
 import static com.flint.compiler.util.LayoutCharacters.*;
 
 public class fTokenizer {
@@ -38,7 +39,7 @@ public class fTokenizer {
 		int endPos = 0;
 		OpChar opChar = OpChar.INVALID;
 
-		wlp:
+		whl:
 		while (true) {
 
 			assert reader.sp == 0 && tname == null && radix == 0;
@@ -47,7 +48,7 @@ public class fTokenizer {
 			switch (reader.ch) {
 				case EOI: {
 					tk = fTokenKind.T_EOF;
-					break wlp;
+					break whl;
 				}
 				case SP: case TAB: case FF: {
 					do {
@@ -62,14 +63,13 @@ public class fTokenizer {
 				case LF: {
 					reader.scanChar();
 					tk = fTokenKind.T_NL;
-					break wlp;
+					break whl;
 				}
 				case 's': {
 					if (reader.peekChar() == '"') {
 						reader.scanChar();
-						pos = reader.bp;
-						scanLiteralString(pos, true);
-						break wlp;
+						scanLiteralString(reader.bp);
+						break whl;
 					}
 					// fall through
 				}
@@ -87,7 +87,7 @@ public class fTokenizer {
 				case 'z':
 				case '$': case '_': {
 					scanIdent(pos);
-					break wlp;
+					break whl;
 				}
 				case '0': {
 					reader.scanChar();
@@ -104,13 +104,13 @@ public class fTokenizer {
 						reader.putChar('0');
 						scanNumber(pos, 8);
 					}
-					break wlp;
+					break whl;
 				}
 
 				case '1': case '2': case '3': case '4':
 				case '5': case '6': case '7': case '8': case '9': {
 					scanNumber(pos, 10);
-					break wlp;
+					break whl;
 				}
 
 				case '.': {
@@ -121,47 +121,47 @@ public class fTokenizer {
 					} else {
 						tk = fTokenKind.T_DOT;
 					}
-					break wlp;
+					break whl;
 				}
 				case ',': {
 					reader.scanChar();
 					tk = fTokenKind.T_COMMA;
-					break wlp;
+					break whl;
 				}
 				case ';': {
 					reader.scanChar();
 					tk = fTokenKind.T_SEMI;
-					break wlp;
+					break whl;
 				}
 				case '(': {
 					reader.scanChar();
 					tk = fTokenKind.T_LPAREN;
-					break wlp;
+					break whl;
 				}
 				case ')': {
 					reader.scanChar();
 					tk = fTokenKind.T_RPAREN;
-					break wlp;
+					break whl;
 				}
 				case '[': {
 					reader.scanChar();
 					tk = fTokenKind.T_LBRACKET;
-					break wlp;
+					break whl;
 				}
 				case ']': {
 					reader.scanChar();
 					tk = fTokenKind.T_RBRACKET;
-					break wlp;
+					break whl;
 				}
 				case '{': {
 					reader.scanChar();
 					tk = fTokenKind.T_LCURL;
-					break wlp;
+					break whl;
 				}
 				case '}': {
 					reader.scanChar();
 					tk = fTokenKind.T_RCURL;
-					break wlp;
+					break whl;
 				}
 
 				case '/': {
@@ -169,36 +169,58 @@ public class fTokenizer {
 						do {
 							reader.scanChar();
 						} while (reader.ch != CR && reader.ch != LF && reader.bp < reader.buflen);
-						continue wlp;
+						continue whl;
 					}
 
 					if (reader.peekChar() == '*') {
+						reader.skipChar();
 						reader.scanChar();
 						while (reader.bp < reader.buflen) {
 							if (reader.ch == '*') {
 								reader.scanChar();
 								if (reader.ch == '/') break;
 							} else {
-								reader.scanCommentChar();
+								reader.scanChar();
 							}
 						}
 						if (reader.ch == '/') {
 							reader.scanChar();
-							continue wlp;
+							continue whl;
 						}
 
 						lexError(pos, "unclosed.comment");
 					}
 
 					scanIdent(pos);
-					break wlp;
+					break whl;
 				}
-
+				case '\'': {
+					reader.scanChar();
+					if (reader.ch == '\'') {
+						lexError(pos, "empty.char.lit");
+						reader.scanChar();
+					} else {
+						if (reader.ch == CR || reader.ch == LF)
+							lexError(pos, "illegal.line.end.in.char.lit");
+						scanLitChar(pos);
+						if (reader.ch == '\'') {
+							reader.scanChar();
+							tk = fTokenKind.T_CHR_LIT;
+						} else {
+							lexError(pos, "unclosed.char.lit");
+						}
+					}
+					break whl;
+				}
+				case '\"': {
+					scanLiteralString(pos);
+					break whl;
+				}
 				default: {
 
 					if (isOpChar(reader.ch)) {
 						opChar = scanIdent(pos);
-						break wlp;
+						break whl;
 					}
 
 					throw new RuntimeException("illegal.char");
@@ -215,23 +237,22 @@ public class fTokenizer {
 		}
 	}
 
-	private void scanLiteralString(int pos, boolean isInterpolated) {
+	private void scanLiteralString(int pos) {
 		reader.scanChar();
 		while (reader.ch != '\"' && reader.ch != CR && reader.ch != LF && reader.bp < reader.buflen)
 			scanLitChar(pos);
 		if (reader.ch == '\"') {
-			reader.scanChar();
-			tname = reader.name();
 			tk = fTokenKind.T_STR_LIT;
+			reader.scanChar();
 		} else {
-			throw new RuntimeException("unclosed.str.lit");
+			lexError(pos, "unclosed.str.lit");
 		}
 	}
 
 	private void scanLitChar(int pos) {
 		if (reader.ch == '\\') {
-			if (reader.peekChar() == '\\') {
-				reader.scanChar();
+			if (reader.peekChar() == '\\' && !reader.isUnicode()) {
+				reader.skipChar();
 				reader.putChar('\\', true);
 			} else {
 				reader.scanChar();
@@ -249,41 +270,32 @@ public class fTokenizer {
 								reader.scanChar();
 							}
 						}
-						reader.putChar((char) oct);
+						reader.putChar((char)oct);
 						break;
 					case 'b':
-						reader.putChar('\b', true);
-						break;
+						reader.putChar('\b', true); break;
 					case 't':
-						reader.putChar('\t', true);
-						break;
+						reader.putChar('\t', true); break;
 					case 'n':
-						reader.putChar('\n', true);
-						break;
+						reader.putChar('\n', true); break;
 					case 'f':
-						reader.putChar('\f', true);
-						break;
+						reader.putChar('\f', true); break;
 					case 'r':
-						reader.putChar('\r', true);
-						break;
+						reader.putChar('\r', true); break;
 					case '\'':
-						reader.putChar('\'', true);
-						break;
+						reader.putChar('\'', true); break;
 					case '\"':
-						reader.putChar('\"', true);
-						break;
+						reader.putChar('\"', true); break;
 					case '\\':
-						reader.putChar('\\', true);
-						break;
+						reader.putChar('\\', true); break;
 					default:
-						throw new RuntimeException("illegal.esc.char");
+						lexError(reader.bp, "illegal.esc.char");
 				}
 			}
 		} else if (reader.bp != reader.buflen) {
 			reader.putChar(true);
 		}
 	}
-
 
 	private boolean isOpChar(char ch) {
 		switch (ch) {
