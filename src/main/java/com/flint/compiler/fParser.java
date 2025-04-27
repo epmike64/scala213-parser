@@ -1,5 +1,6 @@
 package com.flint.compiler;
 
+import com.flint.compiler.parse.ParseNKind;
 import com.flint.compiler.parse.ProdArgs;
 import com.flint.compiler.token.*;
 import com.flint.compiler.token.type.NamedToken;
@@ -140,8 +141,8 @@ public class fParser {
 		throw new RuntimeException("Unexpected token: " + token.kind);
 	}
 
-	fTreeNKind getPrevNKind(ProdArgs a, fTreeNKind replace) {
-		fTreeNKind temp = a.prevNKind;
+	ParseNKind getPrevNKind(ProdArgs a, ParseNKind replace) {
+		ParseNKind temp = a.prevNKind;
 		a.prevNKind = replace;
 		return temp;
 	}
@@ -333,7 +334,7 @@ public class fParser {
 	}
 
 	private void expressionIF(ProdArgs a) {
-		switch (getPrevNKind(a, fTreeNKind.N_IF_KW_LEAF)) {
+		switch (getPrevNKind(a, ParseNKind.N_IF_KW_LEAF)) {
 			case N_ROOT:
 			case N_ID_OPERATOR: {
 				IfKwLeafNode ifLeafN = new IfKwLeafNode(a.lastOpN, accept(T_IF));
@@ -360,7 +361,7 @@ public class fParser {
 	}
 
 	void expressionWhile(ProdArgs a) {
-		switch (getPrevNKind(a, fTreeNKind.N_WHILE_KW_LEAF)) {
+		switch (getPrevNKind(a, ParseNKind.N_WHILE_KW_LEAF)) {
 			case N_ROOT:
 			case N_ID_OPERATOR: {
 				WhileKwLeafNode whileLeafN = new WhileKwLeafNode(a.lastOpN, accept(T_WHILE));
@@ -498,7 +499,7 @@ public class fParser {
 	private ProdRootLeafN pattern() {
 		ProdRootLeafN rootLeaf = pattern1Prod();
 		while (isPipeOpT(0)) {
-			rootLeaf = pattern1Prod(rootLeaf, fTreeNKind.N_ID_OPERATOR, next());
+			rootLeaf = pattern1Prod(rootLeaf, ParseNKind.N_ID_OPERATOR, next());
 		}
 		return rootLeaf;
 	}
@@ -506,28 +507,28 @@ public class fParser {
 	private ProdRootLeafN pattern2s() {
 		ProdRootLeafN rootLeaf = pattern2Prod();
 		while (token.kind == T_COMMA) {
-			rootLeaf = pattern2Prod(rootLeaf, fTreeNKind.N_ID_OPERATOR, next());
+			rootLeaf = pattern2Prod(rootLeaf, ParseNKind.N_ID_OPERATOR, next());
 		}
 		return rootLeaf;
 	}
 
 	private ProdRootLeafN exprs(ProdRootLeafN rootLeaf) {
-		rootLeaf = expressionProd(rootLeaf, fTreeNKind.N_ID_LEAF, null);
+		rootLeaf = expressionProd(rootLeaf, ParseNKind.N_ID_LEAF, null);
 		while (token.kind == T_COMMA) {
-			rootLeaf = expressionProd(rootLeaf, fTreeNKind.N_ID_OPERATOR, next());
+			rootLeaf = expressionProd(rootLeaf, ParseNKind.N_ID_OPERATOR, next());
 		}
 		return rootLeaf;
 	}
 
 	private ProdRootLeafN types(ProdRootLeafN rootLeaf) {
-		rootLeaf = typeProd(rootLeaf, fTreeNKind.N_ID_LEAF, null);
+		rootLeaf = typeProd(rootLeaf, ParseNKind.N_ID_LEAF, null);
 		while (token.kind == T_COMMA) {
-			rootLeaf = typeProd(rootLeaf, fTreeNKind.N_ID_OPERATOR, next());
+			rootLeaf = typeProd(rootLeaf, ParseNKind.N_ID_OPERATOR, next());
 		}
 		return rootLeaf;
 	}
 
-	private void typeLBracket(ProdArgs a) {
+	private void typeArgs(ProdArgs a) {
 		switch (a.prevNKind) {
 			case N_ID_LEAF: {
 				// TypeArgs: "x[type, type]"
@@ -536,7 +537,7 @@ public class fParser {
 				accept(T_LBRACKET);
 				typeWithTypeArgs.val().typeArgsLeafN = types(null);
 				accept(T_RBRACKET);
-				a.prevNKind = fTreeNKind.N_TYPE_LEAF;
+				a.prevNKind = ParseNKind.N_TYPE_LEAF;
 				expectOneOf(0, T_ID, T_COMMA, T_RPAREN, T_FAT_ARROW, T_SEMI, T_NL); //RPAREN: func()()
 				a.isContinue = true;
 				return;
@@ -569,7 +570,7 @@ public class fParser {
 				}
 				assert a.lastOpN.right() == null;
 				a.lastOpN.setRight(subExpr);
-				a.prevNKind = fTreeNKind.N_ID_LEAF;
+				a.prevNKind = ParseNKind.N_ID_LEAF;
 				expectOneOf(0, T_ID, T_COMMA, T_FAT_ARROW, T_RPAREN, T_SEMI, T_NL);
 				a.isContinue = true;
 				return;
@@ -616,7 +617,7 @@ public class fParser {
 				}
 				assert a.lastOpN.right() == null;
 				a.lastOpN.setRight(subExpr);
-				a.prevNKind = fTreeNKind.N_ID_LEAF;
+				a.prevNKind = ParseNKind.N_ID_LEAF;
 				expectOneOf(0, T_ID, T_COMMA, T_IF, T_ELSE, T_FAT_ARROW, T_RPAREN, T_SEMI, T_NL);
 				a.isContinue = true;
 				return;
@@ -627,7 +628,7 @@ public class fParser {
 	}
 
 	private void typeFatArrow(ProdArgs a) {
-		switch (getPrevNKind(a, fTreeNKind.N_FAT_ARROW)) {
+		switch (getPrevNKind(a, ParseNKind.N_FAT_ARROW)) {
 			case N_ROOT:
 			case N_ID_OPERATOR:
 			case N_ID_LEAF: {
@@ -648,7 +649,7 @@ public class fParser {
 	}
 
 	private void expressionFatArrow(ProdArgs a) {
-		switch (getPrevNKind(a, fTreeNKind.N_FAT_ARROW)) {
+		switch (getPrevNKind(a, ParseNKind.N_FAT_ARROW)) {
 			case N_ID_LEAF: {
 				insertOpNode(a, token);
 				assert a.lastOpN.right() == null;
@@ -695,31 +696,31 @@ public class fParser {
 		return templateBody(null, null, null);
 	}
 
-	private ProdRootLeafN typeProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+	private ProdRootLeafN typeProd(ProdRootLeafN wrapSubExpr, ParseNKind prevNKind, fToken opToken) {
 		return commonProd(ProdRootOp.TYPE_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
-	private ProdRootLeafN postfixExprProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+	private ProdRootLeafN postfixExprProd(ProdRootLeafN wrapSubExpr, ParseNKind prevNKind, fToken opToken) {
 		return commonProd(ProdRootOp.POSTFIX_EXPR_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
-	private ProdRootLeafN expressionProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+	private ProdRootLeafN expressionProd(ProdRootLeafN wrapSubExpr, ParseNKind prevNKind, fToken opToken) {
 		return commonProd(ProdRootOp.EXPR_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
-	private ProdRootLeafN caseClassesProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+	private ProdRootLeafN caseClassesProd(ProdRootLeafN wrapSubExpr, ParseNKind prevNKind, fToken opToken) {
 		return commonProd(ProdRootOp.CASE_CLASSES_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
-	private ProdRootLeafN constrBlockProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+	private ProdRootLeafN constrBlockProd(ProdRootLeafN wrapSubExpr, ParseNKind prevNKind, fToken opToken) {
 		return commonProd(CONSTR_BLOCK_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
-	private ProdRootLeafN blockProd(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+	private ProdRootLeafN blockProd(ProdRootLeafN wrapSubExpr, ParseNKind  prevNKind, fToken opToken) {
 		return commonProd(BLOCK_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
-	private ProdRootLeafN templateBody(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+	private ProdRootLeafN templateBody(ProdRootLeafN wrapSubExpr, ParseNKind prevNKind, fToken opToken) {
 		return commonProd(ProdRootOp.TEMPLATE_BODY_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
@@ -735,15 +736,15 @@ public class fParser {
 		return pattern1Prod(null, null, null);
 	}
 
-	private ProdRootLeafN pattern1Prod(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+	private ProdRootLeafN pattern1Prod(ProdRootLeafN wrapSubExpr, ParseNKind prevNKind, fToken opToken) {
 		return commonProd(PATTERN1_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
-	private ProdRootLeafN pattern2Prod(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+	private ProdRootLeafN pattern2Prod(ProdRootLeafN wrapSubExpr, ParseNKind prevNKind, fToken opToken) {
 		return commonProd(ProdRootOp.PATTERN2_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
-	private ProdRootLeafN pattern3Prod(ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+	private ProdRootLeafN pattern3Prod(ProdRootLeafN wrapSubExpr, ParseNKind prevNKind, fToken opToken) {
 		return commonProd(ProdRootOp.PATTERN3_PRD, wrapSubExpr, prevNKind, opToken);
 	}
 
@@ -1165,6 +1166,29 @@ public class fParser {
 		}
 	}
 
+//	void simpleType(ProdArgs a) {
+//		loop:
+//		while(true) {
+//			a.isContinue = false;
+//			switch (token.kind) {
+//				case T_ID: case T_THIS: case T_SUPER: {
+//					setRightLeaf(a, stableId());
+//					continue;
+//				}
+//				case T_LPAREN: {
+//					setRightLeaf(a, types(null));
+//					continue;
+//				}
+//				case T_LBRACKET:
+//					setRightLeaf(a, typeLBracket(a));
+//					continue;
+//			}
+//		}
+//	}
+
+	void constr(ProdArgs a) {
+
+	}
 	ProdRootLeafN classParents() {
 		ProdArgs a = initRootNodeProlog(ProdRootOp.CLASS_PARENTS_PRD);
 		ClassParentsLeafNode leafNode = new ClassParentsLeafNode(a.lastOpN, token);
@@ -1419,7 +1443,7 @@ public class fParser {
 
 				case T_ID: case T_THIS: case T_SUPER: {
 					if (isPipeOpT(0)) {
-						if (a.prevNKind == fTreeNKind.N_ROOT || a.prevNKind == fTreeNKind.N_ID_OPERATOR) {
+						if (a.prevNKind == ParseNKind.N_ROOT || a.prevNKind == ParseNKind.N_ID_OPERATOR) {
 							throw new RuntimeException("Pipe | : " + token.kind);
 						}
 						break loop;
@@ -1462,7 +1486,7 @@ public class fParser {
 					continue;
 				}
 				case T_LBRACKET: {
-					typeLBracket(a);
+					typeArgs(a);
 					assert a.isContinue == true;
 					continue;
 				}
@@ -1471,6 +1495,27 @@ public class fParser {
 				case T_COMMA:
 				default:
 					break loop;
+			}
+		}
+	}
+
+	void simpleType(ProdArgs a) {
+		loop:
+		while(true) {
+			a.isContinue = false;
+			switch (token.kind) {
+				case T_ID: case T_THIS: case T_SUPER: {
+					setRightLeaf(a, stableId());
+					continue;
+				}
+				case T_LPAREN: {
+					setRightLeaf(a, types(null));
+					continue;
+				}
+				case T_LBRACKET:
+					typeArgs(a);
+					//setRightLeaf(a, typeLBracket(a));
+					continue;
 			}
 		}
 	}
@@ -1621,16 +1666,16 @@ public class fParser {
 	}
 
 
-	private ProdRootLeafN commonProd(ProdRootOp prodRootOp, ProdRootLeafN wrapSubExpr, fTreeNKind prevNKind, fToken opToken) {
+	private ProdRootLeafN commonProd(ProdRootOp prodRootOp, ProdRootLeafN wrapSubExpr, ParseNKind prevNKind, fToken opToken) {
 
 		ProdArgs a = new ProdArgs();
 
 		if (wrapSubExpr == null) {
 			a.lastOpN = new RootOpN(prodRootOp);
-			a.prevNKind = fTreeNKind.N_ROOT;
+			a.prevNKind = ParseNKind.N_ROOT;
 
 		} else {//wrapped with parenthesis sub-expression
-			if (prevNKind == fTreeNKind.N_ID_OPERATOR) {
+			if (prevNKind == ParseNKind.N_ID_OPERATOR) {
 				// COMMA, PIPE
 				fOperatorKind opKind = null;
 				switch (opToken.kind) {
@@ -1813,7 +1858,7 @@ public class fParser {
 	}
 
 	private void insertOpNode(ProdArgs a, fToken t) {
-		a.prevNKind = fTreeNKind.N_ID_OPERATOR;
+		a.prevNKind = ParseNKind.N_ID_OPERATOR;
 		a.lastOpN = _insertOpNode(a.lastOpN, t);
 	}
 
@@ -1837,7 +1882,7 @@ public class fParser {
 	private ProdArgs initRootNodeProlog(ProdRootOp prodRootOp) {
 		ProdArgs a = new ProdArgs();
 		a.lastOpN = new RootOpN(prodRootOp);
-		a.prevNKind = fTreeNKind.N_ROOT;
+		a.prevNKind = ParseNKind.N_ROOT;
 		return a;
 	}
 
@@ -1846,7 +1891,7 @@ public class fParser {
 	}
 
 	private void addRootRightIdLeaf(ProdArgs a, fTokenKind... expectTypes) {
-		assert a.prevNKind == fTreeNKind.N_ROOT;
+		assert a.prevNKind == ParseNKind.N_ROOT;
 		addRightIdLeaf(a, expectTypes);
 	}
 
@@ -1859,14 +1904,14 @@ public class fParser {
 	}
 
 	private void setRootRightLeaf(ProdArgs a, CommonLeafNode n, fTokenKind... expectTypes) {
-		assert a.prevNKind == fTreeNKind.N_ROOT;
+		assert a.prevNKind == ParseNKind.N_ROOT;
 		setRightLeaf(a, n, expectTypes);
 	}
 
 	private void setRightLeaf(ProdArgs a, CommonLeafNode n, fTokenKind... expectTypes) {
 		assert a.lastOpN.right() == null;
 		a.lastOpN.setRight(n);
-		a.prevNKind = fTreeNKind.N_ID_LEAF;
+		a.prevNKind = ParseNKind.N_ID_LEAF;
 		if (expectTypes != null && expectTypes.length > 0) {
 			expectOneOf(0, expectTypes);
 		}
